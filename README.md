@@ -1,6 +1,6 @@
 # 🌩 afdian-sponsor
 
-> Generate afdian sponsor svg
+> Generate afdian sponsors svg on github action
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/Sn0wo2/afdian-sponsor)](https://goreportcard.com/report/github.com/Sn0wo2/afdian-sponsor)
 [![GitHub release](https://img.shields.io/github/v/release/Sn0wo2/afdian-sponsor?color=blue)](https://github.com/Sn0wo2/afdian-sponsor/releases)
@@ -9,10 +9,14 @@
 [![Go CI](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/go.yml/badge.svg)](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/go.yml)
 [![Release](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/release.yml/badge.svg)](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/release.yml)
 
-## Usage
+## 👀 Example
+
+See **https://github.com/Sn0wo2/Sn0wo2**
+
+## 🚀 Usage
 
 ```yaml
-name: afdian-sponsor manual run
+name: Sponsor
 
 on:
   workflow_dispatch:
@@ -28,10 +32,11 @@ jobs:
         uses: Sn0wo2/afdian-sponsor@v1.0.4 # replace with the latest version
         env:
           # Required
+          # Get User ID and API Token from https://afdian.com/dashboard/dev
           AFDIAN_USER_ID: ${{ secrets.AFDIAN_USER_ID }}
           AFDIAN_API_TOKEN: ${{ secrets.AFDIAN_API_TOKEN }}
 
-          # Optional
+          # Optional(default values)
           AFDIAN_OUTPUT: /github/workspace/afdian-sponsor.svg
           AFDIAN_PAGE: 1
           AFDIAN_PER_PAGE: 100
