@@ -1,3 +1,14 @@
+# 🌩 afdian-sponsor
+
+> Generate afdian sponsor svg
+
+[![GitHub License](https://img.shields.io/github/license/Sn0wo2/afdian-sponsor)](LICENSE)
+
+[![Release](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/release.yml/badge.svg)](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/release.yml)
+
+## Usage
+
+```yaml
 name: afdian-sponsor manual run
 
 on:
@@ -11,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run afdian-sponsor action
-        uses: ./
+        uses: Sn0wo2/afdian-sponsor@v1
         env:
           AFDIAN_USER_ID: ${{ secrets.AFDIAN_USER_ID }}
           AFDIAN_API_TOKEN: ${{ secrets.AFDIAN_API_TOKEN }}
@@ -21,3 +32,4 @@ jobs:
         with:
           name: afdian-sponsor-svg
           path: afdian-sponsor.svg
+```
