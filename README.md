@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run afdian-sponsor action
-        uses: Sn0wo2/afdian-sponsor@v1.0.2 # replace with the latest version
+        uses: Sn0wo2/afdian-sponsor@v1.0.3 # replace with the latest version
         env:
           # Required
           AFDIAN_USER_ID: ${{ secrets.AFDIAN_USER_ID }}
