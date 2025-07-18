@@ -23,10 +23,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run afdian-sponsor action
-        uses: Sn0wo2/afdian-sponsor@v1.0.0 # replace with the latest version
+        uses: Sn0wo2/afdian-sponsor@v1.0.1 # replace with the latest version
         env:
+          # Required
           AFDIAN_USER_ID: ${{ secrets.AFDIAN_USER_ID }}
           AFDIAN_API_TOKEN: ${{ secrets.AFDIAN_API_TOKEN }}
+
+          # Optional
+          AFDIAN_OUTPUT: /github/workspace/afdian-sponsor.svg
+          AFDIAN_PAGE: 1
+          AFDIAN_PER_PAGE: 100
+          AFDIAN_AVATAR_SIZE: 100
+          AFDIAN_MARGIN: 15
+          AFDIAN_AVATARS_PER_ROW: 10
 
       - name: Upload generated SVG
         uses: actions/upload-artifact@v4
