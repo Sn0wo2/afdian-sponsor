@@ -15,6 +15,7 @@ import (
 func main() {
 	userID := os.Getenv("AFDIAN_USER_ID")
 	apiToken := os.Getenv("AFDIAN_API_TOKEN")
+
 	if userID == "" || apiToken == "" {
 		panic("please set AFDIAN_USER_ID and AFDIAN_API_TOKEN environment variables")
 	}
@@ -33,27 +34,35 @@ func main() {
 	page, err := strconv.Atoi(envPage)
 	if err != nil || page < 1 {
 		fmt.Println("AFDIAN_PAGE must be greater than 0")
+
 		page = 1
 	}
+
 	perPage, err := strconv.Atoi(envPerPage)
 	if err != nil || perPage > 100 || perPage < 1 {
 		fmt.Println("AFDIAN_PER_PAGE must be between 1 and 100")
+
 		perPage = 100
 	}
 
 	avatarSize, err := strconv.Atoi(envAvatarSize)
 	if err != nil || avatarSize < 1 {
 		fmt.Println("AFDIAN_AVATAR_SIZE must be greater than 0")
+
 		avatarSize = 100
 	}
+
 	margin, err := strconv.Atoi(envMargin)
 	if err != nil || margin < 0 {
 		fmt.Println("AFDIAN_MARGIN must be greater than or equal to 0")
+
 		margin = 20
 	}
+
 	avatarsPerRow, err := strconv.Atoi(envAvatarsPerRow)
 	if err != nil || avatarsPerRow < 1 {
 		fmt.Println("AFDIAN_AVATARS_PER_ROW must be greater than 0")
+
 		avatarsPerRow = 6
 	}
 
@@ -63,17 +72,21 @@ func main() {
 	}
 
 	client := afdian.NewClient(config)
+
 	sponsor, err := client.QuerySponsor(page, perPage)
 	if err != nil {
 		panic(err)
 	}
 
 	var sb strings.Builder
+
 	sb.WriteString(fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 %d %d">`, avatarsPerRow*(avatarSize+margin)-margin, (len(sponsor.Data.List)+avatarsPerRow-1)/avatarsPerRow*(avatarSize+margin)-margin))
 	sb.WriteString(`<defs>`)
+
 	for i := range sponsor.Data.List {
 		sb.WriteString(fmt.Sprintf(`<clipPath id="clip-%d"><circle cx="%d" cy="%d" r="%d"/></clipPath>`, i, (i%avatarsPerRow)*(avatarSize+margin)+avatarSize/2, (i/avatarsPerRow)*(avatarSize+margin)+avatarSize/2, avatarSize/2))
 	}
+
 	sb.WriteString("</defs>\n")
 
 	for i, v := range sponsor.Data.List {
@@ -84,7 +97,11 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		defer resp.Body.Close()
+
+		defer func() 
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		img, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -99,7 +116,7 @@ func main() {
 
 	sb.WriteString(`</svg>`)
 
-	err = os.WriteFile(output, []byte(sb.String()), 0644)
+	err = os.WriteFile(output, []byte(sb.String()), 0o600)
 	if err != nil {
 		panic(err)
 	}
