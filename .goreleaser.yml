@@ -2,7 +2,7 @@ version: 2
 project_name: afdian-sponsor
 builds:
   - id: afdian-sponsor
-    main: ./main.go
+    main: ./
     binary: afdian-sponsor
     env:
       - CGO_ENABLED=0
