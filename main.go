@@ -98,7 +98,6 @@ func main() {
 			panic(err)
 		}
 
-		defer func() 
 		defer func() {
 			_ = resp.Body.Close()
 		}()
