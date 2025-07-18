@@ -30,19 +30,13 @@ jobs:
         run: go mod tidy
 
       - name: Run vet
-        run: go vet $(go list ./...)
+        run: go vet ./...
 
       - name: Run tests
-        run: go test -vet=off $(go list ./...)
+        run: go test ./...
 
       - name: Build binary
-        run: go build -v -o dist/QuickNote .
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: QuickNote-Binary
-          path: dist/QuickNote
+        run: go build -v .
 
       - name: Check for file changes
         id: git-check
