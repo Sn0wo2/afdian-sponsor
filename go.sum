@@ -1,5 +1,5 @@
-github.com/Sn0wo2/go-afdian-api v0.0.0-20250717113104-800d74eebf5b h1:NcBcw0xCcuzGhEDV3U76M9MtiUOENvkrxyeGJfrFg88=
-github.com/Sn0wo2/go-afdian-api v0.0.0-20250717113104-800d74eebf5b/go.mod h1:ahbpbD7UVNMZWU9y6lDwB1Vvx1H7Ee5wn04hs/leEU4=
+github.com/Sn0wo2/go-afdian-api v1.0.1 h1:c5B0TNp4zKlfWlhwWQ0Up6jelk9lyyTfCjmEeGaxoTs=
+github.com/Sn0wo2/go-afdian-api v1.0.1/go.mod h1:ahbpbD7UVNMZWU9y6lDwB1Vvx1H7Ee5wn04hs/leEU4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
