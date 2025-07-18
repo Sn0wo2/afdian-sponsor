@@ -1,6 +1,9 @@
 name: "afdian-sponsor"
 description: "build afdian sponsor svg"
 author: "Sn0wo2"
+
 runs:
   using: "docker"
   image: "docker://ghcr.io/${{ github.repository_owner }}/afdian-sponsor:latest"
+  env:
+    AFDIAN_OUTPUT: "/github/workspace/afdian-sponsor.svg"
