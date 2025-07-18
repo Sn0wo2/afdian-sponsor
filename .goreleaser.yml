@@ -1,0 +1,85 @@
+version: 2
+project_name: afdian-sponsor
+builds:
+  - id: afdian-sponsor
+    main: ./main.go
+    binary: afdian-sponsor
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -mod=readonly
+      - -trimpath
+    asmflags:
+      - -trimpath
+    gcflags:
+      - all=-d=ssa/check_bce/debug=0
+    ldflags:
+      - -s -w -buildid=
+      - -extldflags=-static
+      - -linkmode internal
+      - -X github.com/Sn0wo2/afdian-sponsor/pkg/version.version={{.Version}}
+      - -X github.com/Sn0wo2/afdian-sponsor/pkg/version.commit={{.Commit}}
+      - -X github.com/Sn0wo2/afdian-sponsor/pkg/version.date={{.Date}}
+
+dockers:
+  - goos: linux
+    goarch: amd64
+    image_templates:
+      - "ghcr.io/{{ .ProjectOwner }}/{{ .ProjectName }}:{{ .Tag }}-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+
+  - goos: linux
+    goarch: arm64
+    image_templates:
+      - "ghcr.io/{{ .ProjectOwner }}/{{ .ProjectName }}:{{ .Tag }}-arm64"
+    dockerfile: Dockerfile
+    use: buildx
+
+docker_manifests:
+  - name_template: "ghcr.io/{{ .ProjectOwner }}/{{ .ProjectName }}:{{ .Tag }}"
+    image_templates:
+      - "ghcr.io/{{ .ProjectOwner }}/{{ .ProjectName }}:{{ .Tag }}-amd64"
+      - "ghcr.io/{{ .ProjectOwner }}/{{ .ProjectName }}:{{ .Tag }}-arm64"
+
+  - name_template: "ghcr.io/{{ .ProjectOwner }}/{{ .ProjectName }}:latest"
+    image_templates:
+      - "ghcr.io/{{ .ProjectOwner }}/{{ .ProjectName }}:{{ .Tag }}-amd64"
+      - "ghcr.io/{{ .ProjectOwner }}/{{ .ProjectName }}:{{ .Tag }}-arm64"
+
+changelog:
+  disable: false
+  use: github
+  sort: asc
+  groups:
+    - title: "🚀 Features"
+      regexp: "^.*feat(?:\\([^)]+\\))?:+.*$"
+      order: 0
+    - title: "🐛 Bug Fixes"
+      regexp: "^.*fix(?:\\([^)]+\\))?:+.*$"
+      order: 1
+    - title: "⚡️ Performance Improvements"
+      regexp: "^.*perf(?:\\([^)]+\\))?:+.*$"
+      order: 2
+    - title: "📝 Documentation"
+      regexp: "^.*docs(?:\\([^)]+\\))?:+.*$"
+      order: 3
+    - title: "🔧 Maintenance & Chores"
+      regexp: "^.*chore(?:\\([^)]+\\))?:+.*$"
+      order: 4
+    - title: "♻️ Code Refactoring"
+      regexp: "^.*refactor(?:\\([^)]+\\))?:+.*$"
+      order: 5
+    - title: "🧪 Tests"
+      regexp: "^.*test(?:\\([^)]+\\))?:+.*$"
+      order: 6
+    - title: "📦 Dependency Updates"
+      regexp: "^.*deps(?:\\([^)]+\\))?:+.*$"
+      order: 7
+    - title: "📍 Others"
+      order: 999
