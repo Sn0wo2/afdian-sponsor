@@ -4,6 +4,6 @@ author: "Sn0wo2"
 
 runs:
   using: "docker"
-  image: "docker://ghcr.io/${{ github.repository_owner }}/afdian-sponsor:latest"
+  image: "docker://ghcr.io/sn0wo2/afdian-sponsor:latest"
   env:
     AFDIAN_OUTPUT: "/github/workspace/afdian-sponsor.svg"

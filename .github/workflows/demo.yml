@@ -1,0 +1,23 @@
+name: afdian-sponsor manual run
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run afdian-sponsor action
+        uses: ./
+        env:
+          AFDIAN_USER_ID: ${{ secrets.AFDIAN_USER_ID }}
+          AFDIAN_API_TOKEN: ${{ secrets.AFDIAN_API_TOKEN }}
+
+      - name: Upload generated SVG
+        uses: actions/upload-artifact@v4
+        with:
+          name: afdian-sponsor-svg
+          path: afdian-sponsor.svg
