@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run afdian-sponsor action
-        uses: Sn0wo2/afdian-sponsor@v1.0.5 # replace with the latest version
+        uses: Sn0wo2/afdian-sponsor@v1
         env:
           # Required
           # Get User ID and API Token from https://afdian.com/dashboard/dev
