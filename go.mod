@@ -2,7 +2,7 @@ module github.com/Sn0wo2/afdian-sponsor
 
 go 1.24.5
 
-require github.com/Sn0wo2/go-afdian-api v1.0.1
+require github.com/Sn0wo2/go-afdian-api v1.2.0
 
 require (
 	github.com/json-iterator/go v1.1.12 // indirect
