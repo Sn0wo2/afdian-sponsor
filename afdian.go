@@ -6,14 +6,11 @@ import (
 )
 
 func querySponsor(userID string, apiToken string, page int, perPage int) *payload.QuerySponsor {
-	config := &afdian.Config{
+	sponsor, err := afdian.NewClient(&afdian.Config{
 		UserID:   userID,
 		APIToken: apiToken,
-	}
+	}).QuerySponsor(page, perPage)
 
-	client := afdian.NewClient(config)
-
-	sponsor, err := client.QuerySponsor(page, perPage)
 	if err != nil {
 		panic(err)
 	}
