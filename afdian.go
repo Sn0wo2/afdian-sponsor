@@ -10,7 +10,6 @@ func querySponsor(userID string, apiToken string, page int, perPage int) *payloa
 		UserID:   userID,
 		APIToken: apiToken,
 	}).QuerySponsor(page, perPage)
-
 	if err != nil {
 		panic(err)
 	}
