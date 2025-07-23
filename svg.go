@@ -11,11 +11,10 @@ import (
 const tpl = `
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {{.Width}} {{.Height}}">
 <style>
-    .active-text { fill: #333; }
-    .expired-text { fill: #999; }
+    .active-text { fill: #000; }
+    .expired-text { fill: #666; }
     @media (prefers-color-scheme: dark) {
-        .active-text { fill: #ccc; }
-        .expired-text { fill: #666; }
+        .active-text, .expired-text { fill: #fff; }
     }
 </style>
 <defs>
@@ -128,13 +127,13 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 	}
 
 	lineY := 0
-	height := activeHeight + expiredHeight
+	height := activeHeight
 	expiredYOffset := 0
 
 	if len(activeSponsors) > 0 && len(expiredSponsors) > 0 {
 		lineY = activeHeight + 10
 		expiredYOffset = lineY + 10
-		height += 20
+		height += expiredHeight + 20
 	} else if len(activeSponsors) == 0 && len(expiredSponsors) > 0 {
 		height = expiredHeight
 	}
