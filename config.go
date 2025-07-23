@@ -14,8 +14,8 @@ func getConfig() (userID string, apiToken string, output string, totalSponsor in
 		panic("please set AFDIAN_USER_ID and AFDIAN_API_TOKEN environment variables")
 	}
 
-	fmt.Printf("AFDIAN_USER_ID: %s\n", userID)
-	fmt.Printf("AFDIAN_API_TOKEN: %s\n", apiToken)
+	fmt.Printf("Env AFDIAN_USER_ID: %s\n", userID)
+	fmt.Printf("Env AFDIAN_API_TOKEN: %s\n", apiToken)
 
 	parseString := func(s string) (string, error) { return s, nil }
 	parseInt := func(s string) (int, error) { return strconv.Atoi(s) }
