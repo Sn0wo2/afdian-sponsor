@@ -10,8 +10,10 @@ func main() {
 
 	qs := querySponsor(userID, apiToken, totalSponsor)
 
-	var activeSponsors []sponsorSVG
-	var expiredSponsors []sponsorSVG
+	var (
+		activeSponsors  []sponsorSVG
+		expiredSponsors []sponsorSVG
+	)
 
 	for _, s := range qs {
 		for _, v := range s.Data.List {

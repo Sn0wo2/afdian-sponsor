@@ -65,6 +65,7 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 			if err != nil {
 				panic(err)
 			}
+
 			defer func() {
 				_ = resp.Body.Close()
 			}()
@@ -102,12 +103,14 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 	var b bytes.Buffer
 
 	activeHeight := 0
+
 	if len(activeSponsors) > 0 {
 		activeRows := (len(activeSponsors) + avatarsPerRow - 1) / avatarsPerRow
 		activeHeight = activeRows*(avatarSize+margin+40) - margin
 	}
 
 	expiredHeight := 0
+
 	if len(expiredSponsors) > 0 {
 		expiredRows := (len(expiredSponsors) + avatarsPerRow - 1) / avatarsPerRow
 		expiredHeight = expiredRows*(avatarSize+margin+40) - margin
@@ -116,6 +119,7 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 	lineY := 0
 	height := activeHeight + expiredHeight
 	expiredYOffset := 0
+
 	if len(activeSponsors) > 0 && len(expiredSponsors) > 0 {
 		height += 40 // for separator and margin
 		lineY = activeHeight + 40

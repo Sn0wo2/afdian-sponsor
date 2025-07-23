@@ -7,6 +7,7 @@ import (
 
 func querySponsor(userID string, apiToken string, totalSponsor int) []*payload.QuerySponsor {
 	page := 1
+
 	perPage := 100
 	if totalSponsor < 100 {
 		perPage = totalSponsor
@@ -45,6 +46,7 @@ func querySponsor(userID string, apiToken string, totalSponsor int) []*payload.Q
 		if err != nil {
 			panic(err)
 		}
+
 		sponsors = append(sponsors, sponsor)
 	}
 
