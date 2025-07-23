@@ -132,8 +132,8 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 
 	if len(activeSponsors) > 0 && len(expiredSponsors) > 0 {
 		lineY = activeHeight + 10
+		height += expiredHeight
 		expiredYOffset = lineY + 10
-		height += expiredHeight + 20
 	} else if len(activeSponsors) == 0 && len(expiredSponsors) > 0 {
 		height = expiredHeight
 	}
@@ -149,7 +149,7 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 		ExpiredYOffset  int
 	}{
 		Width:           avatarsPerRow*(avatarSize+margin) - margin,
-		Height:          height,
+		Height:          height + 20,
 		ActiveSponsors:  activeSponsors,
 		ExpiredSponsors: expiredSponsors,
 		LineX1:          avatarSize / 2,
