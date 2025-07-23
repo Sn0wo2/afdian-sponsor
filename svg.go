@@ -10,6 +10,14 @@ import (
 
 const tpl = `
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {{.Width}} {{.Height}}">
+<style>
+    .active-text { fill: #333; }
+    .expired-text { fill: #999; }
+    @media (prefers-color-scheme: dark) {
+        .active-text { fill: #ccc; }
+        .expired-text { fill: #666; }
+    }
+</style>
 <defs>
 {{range .ActiveSponsors}}
     <clipPath id="clip-{{.Index}}"><circle cx="{{.Cx}}" cy="{{.Cy}}" r="{{.R}}"/></clipPath>
@@ -24,7 +32,7 @@ const tpl = `
         <title>{{.Name}}</title>
         <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
     </g>
-    <text x="{{.Cx}}" y="{{.TextY}}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#333">{{.Name}}</text>
+    <text x="{{.Cx}}" y="{{.TextY}}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" class="active-text">{{.Name}}</text>
 {{end}}
 </g>
 {{if and .ActiveSponsors .ExpiredSponsors}}
@@ -37,7 +45,7 @@ const tpl = `
         <title>{{.Name}}</title>
         <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
     </g>
-    <text x="{{.Cx}}" y="{{.TextY}}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#999">{{.Name}}</text>
+    <text x="{{.Cx}}" y="{{.TextY}}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" class="expired-text">{{.Name}}</text>
 {{end}}
 </g>
 {{end}}
@@ -60,6 +68,9 @@ type sponsorSVG struct {
 
 func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, margin int, avatarsPerRow int) string {
 	processSponsors := func(sponsors []sponsorSVG) {
+		rowHeight := avatarSize + margin + 15
+		textYMargin := avatarSize + 15
+
 		for i := range sponsors {
 			resp, err := http.Get(sponsors[i].Avatar)
 			if err != nil {
@@ -77,10 +88,10 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 
 			sponsors[i].Index = i
 			sponsors[i].Cx = (i%avatarsPerRow)*(avatarSize+margin) + avatarSize/2
-			sponsors[i].Cy = (i/avatarsPerRow)*(avatarSize+margin+20) + avatarSize/2
+			sponsors[i].Cy = (i/avatarsPerRow)*rowHeight + avatarSize/2
 			sponsors[i].X = (i % avatarsPerRow) * (avatarSize + margin)
-			sponsors[i].Y = (i / avatarsPerRow) * (avatarSize + margin + 20)
-			sponsors[i].TextY = sponsors[i].Y + avatarSize + 20
+			sponsors[i].Y = (i / avatarsPerRow) * rowHeight
+			sponsors[i].TextY = sponsors[i].Y + textYMargin
 			sponsors[i].R = avatarSize / 2
 			sponsors[i].AvatarSize = avatarSize
 			sponsors[i].ImgMime = http.DetectContentType(img)
@@ -106,14 +117,14 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 
 	if len(activeSponsors) > 0 {
 		activeRows := (len(activeSponsors) + avatarsPerRow - 1) / avatarsPerRow
-		activeHeight = activeRows*(avatarSize+margin+40) - margin
+		activeHeight = activeRows*(avatarSize+margin+15) - margin
 	}
 
 	expiredHeight := 0
 
 	if len(expiredSponsors) > 0 {
 		expiredRows := (len(expiredSponsors) + avatarsPerRow - 1) / avatarsPerRow
-		expiredHeight = expiredRows*(avatarSize+margin+40) - margin
+		expiredHeight = expiredRows*(avatarSize+margin+15) - margin
 	}
 
 	lineY := 0
@@ -121,8 +132,9 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 	expiredYOffset := 0
 
 	if len(activeSponsors) > 0 && len(expiredSponsors) > 0 {
-		lineY = activeHeight + 40
-		expiredYOffset = lineY + 40
+		lineY = activeHeight + 10
+		expiredYOffset = lineY + 10
+		height += 20
 	} else if len(activeSponsors) == 0 && len(expiredSponsors) > 0 {
 		height = expiredHeight
 	}
