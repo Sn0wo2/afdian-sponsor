@@ -50,7 +50,3 @@ jobs:
           name: afdian-sponsor-svg
           path: afdian-sponsor.svg
 ```
-
-## 📄 **License**
-
-Licensed under [GPL 3.0](LICENSE).
