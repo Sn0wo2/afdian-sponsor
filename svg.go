@@ -67,6 +67,7 @@ func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, marg
 			if err != nil {
 				panic(err)
 			}
+
 			_ = resp.Body.Close()
 			sponsors[i].Index = i
 			sponsors[i].CenterX = (i%avatarsPerRow)*(avatarSize+margin) + avatarSize/2
