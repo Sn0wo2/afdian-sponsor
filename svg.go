@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"text/template"
+
+	"github.com/mattn/go-runewidth"
 )
 
 const tpl = `
@@ -30,7 +32,7 @@ const tpl = `
 <g id="active-sponsors">
 {{range .ActiveSponsors}}
     <g clip-path="url(#clip-{{.Index}})">
-        <title>{{.Name}}</title>
+        <title>{{.OriginalName}}</title>
         <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
     </g>
     <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="12" class="active-text">{{.Name}}</text>
@@ -43,7 +45,7 @@ const tpl = `
 <g id="expired-sponsors" transform="translate(0, {{.ExpiredYOffset}})">
 {{range .ExpiredSponsors}}
     <g clip-path="url(#clip-expired-{{.Index}})" opacity="0.5">
-        <title>{{.Name}}</title>
+        <title>{{.OriginalName}}</title>
         <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
     </g>
     <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="12" class="expired-text">{{.Name}}</text>
@@ -52,12 +54,44 @@ const tpl = `
 {{end}}
 </svg>`
 
+func stringWidth(s string) int {
+	return runewidth.StringWidth(s)
+}
+
+func truncateStringByWidth(s string, limit int) string {
+	if stringWidth(s) <= limit {
+		return s
+	}
+
+	width := 0
+
+	runes := []rune(s)
+	for i, r := range runes {
+		width += runewidth.RuneWidth(r)
+		if width > limit {
+			return string(runes[:i]) + "..."
+		}
+	}
+
+	return s
+}
+
 func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, margin int, avatarsPerRow int) string {
+	nameLimit := avatarSize / 6
+	if nameLimit < 5 {
+		nameLimit = 5
+	}
+
 	processSponsors := func(sponsors []sponsor) {
 		rowHeight := avatarSize + margin + 35
 		textYMargin := avatarSize + 25
 
 		for i := range sponsors {
+			sponsors[i].OriginalName = sponsors[i].Name
+			if stringWidth(sponsors[i].Name) > nameLimit {
+				sponsors[i].Name = truncateStringByWidth(sponsors[i].Name, nameLimit)
+			}
+
 			resp, err := http.Get(sponsors[i].Avatar)
 			if err != nil {
 				panic(err)
@@ -69,6 +103,7 @@ func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, marg
 			}
 
 			_ = resp.Body.Close()
+
 			sponsors[i].Index = i
 			sponsors[i].CenterX = (i%avatarsPerRow)*(avatarSize+margin) + avatarSize/2
 			sponsors[i].CenterY = (i/avatarsPerRow)*rowHeight + avatarSize/2
@@ -96,30 +131,32 @@ func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, marg
 
 	var b bytes.Buffer
 
-	activeHeight := 0
+	rowHeight := avatarSize + margin + 35
+	separatorHeight := 40
 
-	if len(activeSponsors) > 0 {
-		activeRows := (len(activeSponsors) + avatarsPerRow - 1) / avatarsPerRow
-		activeHeight = activeRows*(avatarSize+margin+35) - margin
+	calculateHeight := func(sponsors []sponsor) int {
+		if len(sponsors) == 0 {
+			return 0
+		}
+
+		rows := (len(sponsors) + avatarsPerRow - 1) / avatarsPerRow
+
+		return rows*rowHeight - margin
 	}
 
-	expiredHeight := 0
+	activeHeight := calculateHeight(activeSponsors)
+	expiredHeight := calculateHeight(expiredSponsors)
 
-	if len(expiredSponsors) > 0 {
-		expiredRows := (len(expiredSponsors) + avatarsPerRow - 1) / avatarsPerRow
-		expiredHeight = expiredRows*(avatarSize+margin+35) - margin
+	height := activeHeight + expiredHeight
+	if activeHeight > 0 && expiredHeight > 0 {
+		height += separatorHeight
 	}
 
-	lineY := 0
-	height := activeHeight
-	expiredYOffset := 0
+	lineY := activeHeight + separatorHeight/2
 
-	if len(activeSponsors) > 0 && len(expiredSponsors) > 0 {
-		lineY = activeHeight + 20
-		height += expiredHeight
-		expiredYOffset = lineY + 20
-	} else if len(activeSponsors) == 0 && len(expiredSponsors) > 0 {
-		height = expiredHeight
+	expiredYOffset := activeHeight
+	if activeHeight > 0 && expiredHeight > 0 {
+		expiredYOffset += separatorHeight
 	}
 
 	if err := t.Execute(&b, struct {
@@ -133,7 +170,7 @@ func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, marg
 		ExpiredYOffset  int
 	}{
 		Width:           avatarsPerRow*(avatarSize+margin) - margin,
-		Height:          height + 40,
+		Height:          height,
 		ActiveSponsors:  activeSponsors,
 		ExpiredSponsors: expiredSponsors,
 		LineX1:          avatarSize / 2,
