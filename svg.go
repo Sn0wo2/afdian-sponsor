@@ -11,18 +11,20 @@ import (
 const tpl = `
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {{.Width}} {{.Height}}">
 <style>
-    .active-text { fill: #000; }
-    .expired-text { fill: #666; }
+    .active-text { fill: #000; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .expired-text { fill: #666; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .separator { stroke: #eeeeee; }
     @media (prefers-color-scheme: dark) {
         .active-text, .expired-text { fill: #fff; }
+        .separator { stroke: #333; }
     }
 </style>
 <defs>
 {{range .ActiveSponsors}}
-    <clipPath id="clip-{{.Index}}"><circle cx="{{.Cx}}" cy="{{.Cy}}" r="{{.R}}"/></clipPath>
+    <clipPath id="clip-{{.Index}}"><circle cx="{{.CenterX}}" cy="{{.CenterY}}" r="{{.Radius}}"/></clipPath>
 {{end}}
 {{range .ExpiredSponsors}}
-    <clipPath id="clip-expired-{{.Index}}"><circle cx="{{.Cx}}" cy="{{.Cy}}" r="{{.R}}"/></clipPath>
+    <clipPath id="clip-expired-{{.Index}}"><circle cx="{{.CenterX}}" cy="{{.CenterY}}" r="{{.Radius}}"/></clipPath>
 {{end}}
 </defs>
 <g id="active-sponsors">
@@ -31,11 +33,11 @@ const tpl = `
         <title>{{.Name}}</title>
         <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
     </g>
-    <text x="{{.Cx}}" y="{{.TextY}}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" class="active-text">{{.Name}}</text>
+    <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="12" class="active-text">{{.Name}}</text>
 {{end}}
 </g>
 {{if and .ActiveSponsors .ExpiredSponsors}}
-<line x1="{{.LineX1}}" y1="{{.LineY}}" x2="{{.LineX2}}" y2="{{.LineY}}" stroke="#e0e0e0" stroke-width="1"/>
+<line class="separator" x1="{{.LineX1}}" y1="{{.LineY}}" x2="{{.LineX2}}" y2="{{.LineY}}" stroke-width="1"/>
 {{end}}
 {{if .ExpiredSponsors}}
 <g id="expired-sponsors" transform="translate(0, {{.ExpiredYOffset}})">
@@ -44,7 +46,7 @@ const tpl = `
         <title>{{.Name}}</title>
         <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
     </g>
-    <text x="{{.Cx}}" y="{{.TextY}}" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" class="expired-text">{{.Name}}</text>
+    <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="12" class="expired-text">{{.Name}}</text>
 {{end}}
 </g>
 {{end}}
@@ -54,12 +56,12 @@ type sponsorSVG struct {
 	Name       string
 	Avatar     string
 	Index      int
-	Cx         int
-	Cy         int
+	CenterX    int
+	CenterY    int
 	X          int
 	Y          int
 	TextY      int
-	R          int
+	Radius     int
 	AvatarSize int
 	ImgMime    string
 	ImgB64     string
@@ -67,8 +69,8 @@ type sponsorSVG struct {
 
 func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, margin int, avatarsPerRow int) string {
 	processSponsors := func(sponsors []sponsorSVG) {
-		rowHeight := avatarSize + margin + 15
-		textYMargin := avatarSize + 15
+		rowHeight := avatarSize + margin + 25
+		textYMargin := avatarSize + 20
 
 		for i := range sponsors {
 			resp, err := http.Get(sponsors[i].Avatar)
@@ -86,12 +88,12 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 			}
 
 			sponsors[i].Index = i
-			sponsors[i].Cx = (i%avatarsPerRow)*(avatarSize+margin) + avatarSize/2
-			sponsors[i].Cy = (i/avatarsPerRow)*rowHeight + avatarSize/2
+			sponsors[i].CenterX = (i%avatarsPerRow)*(avatarSize+margin) + avatarSize/2
+			sponsors[i].CenterY = (i/avatarsPerRow)*rowHeight + avatarSize/2
 			sponsors[i].X = (i % avatarsPerRow) * (avatarSize + margin)
 			sponsors[i].Y = (i / avatarsPerRow) * rowHeight
 			sponsors[i].TextY = sponsors[i].Y + textYMargin
-			sponsors[i].R = avatarSize / 2
+			sponsors[i].Radius = avatarSize / 2
 			sponsors[i].AvatarSize = avatarSize
 			sponsors[i].ImgMime = http.DetectContentType(img)
 			sponsors[i].ImgB64 = base64.StdEncoding.EncodeToString(img)
@@ -116,14 +118,14 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 
 	if len(activeSponsors) > 0 {
 		activeRows := (len(activeSponsors) + avatarsPerRow - 1) / avatarsPerRow
-		activeHeight = activeRows*(avatarSize+margin+15) - margin
+		activeHeight = activeRows*(avatarSize+margin+25) - margin
 	}
 
 	expiredHeight := 0
 
 	if len(expiredSponsors) > 0 {
 		expiredRows := (len(expiredSponsors) + avatarsPerRow - 1) / avatarsPerRow
-		expiredHeight = expiredRows*(avatarSize+margin+15) - margin
+		expiredHeight = expiredRows*(avatarSize+margin+25) - margin
 	}
 
 	lineY := 0
@@ -131,9 +133,9 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 	expiredYOffset := 0
 
 	if len(activeSponsors) > 0 && len(expiredSponsors) > 0 {
-		lineY = activeHeight + 10
+		lineY = activeHeight + 20
 		height += expiredHeight
-		expiredYOffset = lineY + 10
+		expiredYOffset = lineY + 20
 	} else if len(activeSponsors) == 0 && len(expiredSponsors) > 0 {
 		height = expiredHeight
 	}
