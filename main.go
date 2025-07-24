@@ -11,19 +11,19 @@ func main() {
 	qs := querySponsor(userID, apiToken, totalSponsor)
 
 	var (
-		activeSponsors  []sponsorSVG
-		expiredSponsors []sponsorSVG
+		activeSponsors  []sponsor
+		expiredSponsors []sponsor
 	)
 
 	for _, s := range qs {
 		for _, v := range s.Data.List {
 			if v.CurrentPlan.Name == "" {
-				expiredSponsors = append(expiredSponsors, sponsorSVG{
+				expiredSponsors = append(expiredSponsors, sponsor{
 					Name:   v.User.Name,
 					Avatar: v.User.Avatar,
 				})
 			} else {
-				activeSponsors = append(activeSponsors, sponsorSVG{
+				activeSponsors = append(activeSponsors, sponsor{
 					Name:   v.User.Name,
 					Avatar: v.User.Avatar,
 				})

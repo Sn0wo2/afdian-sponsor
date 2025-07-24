@@ -52,25 +52,10 @@ const tpl = `
 {{end}}
 </svg>`
 
-type sponsorSVG struct {
-	Name       string
-	Avatar     string
-	Index      int
-	CenterX    int
-	CenterY    int
-	X          int
-	Y          int
-	TextY      int
-	Radius     int
-	AvatarSize int
-	ImgMime    string
-	ImgB64     string
-}
-
-func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, margin int, avatarsPerRow int) string {
-	processSponsors := func(sponsors []sponsorSVG) {
-		rowHeight := avatarSize + margin + 25
-		textYMargin := avatarSize + 20
+func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, margin int, avatarsPerRow int) string {
+	processSponsors := func(sponsors []sponsor) {
+		rowHeight := avatarSize + margin + 35
+		textYMargin := avatarSize + 25
 
 		for i := range sponsors {
 			resp, err := http.Get(sponsors[i].Avatar)
@@ -78,15 +63,11 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 				panic(err)
 			}
 
-			defer func() {
-				_ = resp.Body.Close()
-			}()
-
 			img, err := io.ReadAll(resp.Body)
 			if err != nil {
 				panic(err)
 			}
-
+			_ = resp.Body.Close()
 			sponsors[i].Index = i
 			sponsors[i].CenterX = (i%avatarsPerRow)*(avatarSize+margin) + avatarSize/2
 			sponsors[i].CenterY = (i/avatarsPerRow)*rowHeight + avatarSize/2
@@ -118,14 +99,14 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 
 	if len(activeSponsors) > 0 {
 		activeRows := (len(activeSponsors) + avatarsPerRow - 1) / avatarsPerRow
-		activeHeight = activeRows*(avatarSize+margin+25) - margin
+		activeHeight = activeRows*(avatarSize+margin+35) - margin
 	}
 
 	expiredHeight := 0
 
 	if len(expiredSponsors) > 0 {
 		expiredRows := (len(expiredSponsors) + avatarsPerRow - 1) / avatarsPerRow
-		expiredHeight = expiredRows*(avatarSize+margin+25) - margin
+		expiredHeight = expiredRows*(avatarSize+margin+35) - margin
 	}
 
 	lineY := 0
@@ -143,15 +124,15 @@ func generateSVG(activeSponsors, expiredSponsors []sponsorSVG, avatarSize int, m
 	if err := t.Execute(&b, struct {
 		Width           int
 		Height          int
-		ActiveSponsors  []sponsorSVG
-		ExpiredSponsors []sponsorSVG
+		ActiveSponsors  []sponsor
+		ExpiredSponsors []sponsor
 		LineX1          int
 		LineX2          int
 		LineY           int
 		ExpiredYOffset  int
 	}{
 		Width:           avatarsPerRow*(avatarSize+margin) - margin,
-		Height:          height + 20,
+		Height:          height + 40,
 		ActiveSponsors:  activeSponsors,
 		ExpiredSponsors: expiredSponsors,
 		LineX1:          avatarSize / 2,
