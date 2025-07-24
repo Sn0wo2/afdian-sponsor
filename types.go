@@ -2,8 +2,9 @@ package main
 
 type sponsor struct {
 	// Data fields
-	Name   string
-	Avatar string
+	Name         string
+	OriginalName string
+	Avatar       string
 
 	// SVG rendering fields
 	Index      int

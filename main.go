@@ -22,12 +22,12 @@ func main() {
 					Name:   v.User.Name,
 					Avatar: v.User.Avatar,
 				})
-			} else {
-				activeSponsors = append(activeSponsors, sponsor{
-					Name:   v.User.Name,
-					Avatar: v.User.Avatar,
-				})
+				continue
 			}
+			activeSponsors = append(activeSponsors, sponsor{
+				Name:   v.User.Name,
+				Avatar: v.User.Avatar,
+			})
 		}
 	}
 
