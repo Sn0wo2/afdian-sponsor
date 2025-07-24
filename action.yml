@@ -1,9 +1,29 @@
-name: "afdian-sponsor"
-description: "build afdian sponsor svg"
-author: "Sn0wo2"
+name: afdian-sponsor
+description: Download and run afdian-sponsor binary across Linux/Windows/macOS
+author: Sn0wo2
+
+inputs:
+  version:
+    description: 'Release tag to fetch (e.g. v1.2.3). 默认 latest'
+    required: false
+    default: 'latest'
+  cache:
+    description: 'Enable GitHub Actions cache for the binary'
+    required: false
+    default: 'true'
 
 runs:
-  using: "docker"
-  image: "docker://ghcr.io/sn0wo2/afdian-sponsor:latest"
+  using: composite
   env:
     AFDIAN_OUTPUT: "/github/workspace/afdian-sponsor.svg"
+  steps:
+    - name: Install afdian-sponsor
+      uses: jaxxstorm/action-install-gh-release@v1
+      with:
+        repo: Sn0wo2/afdian-sponsor
+        tag: ${{ inputs.version }}
+        cache: ${{ (inputs.cache == 'false') && '' || 'enable' }}
+
+    - name: Generate sponsor SVG
+      shell: bash
+      run: afdian-sponsor
