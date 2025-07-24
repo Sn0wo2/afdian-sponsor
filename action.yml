@@ -25,5 +25,3 @@ runs:
     - name: Generate sponsor SVG
       shell: bash
       run: afdian-sponsor
-      env:
-        AFDIAN_OUTPUT: /github/workspace/afdian-sponsor.svg
