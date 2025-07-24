@@ -6,8 +6,6 @@ import (
 )
 
 func querySponsor(userID string, apiToken string, totalSponsor int) []*payload.QuerySponsor {
-	page := 1
-
 	perPage := 100
 	if totalSponsor < 100 {
 		perPage = totalSponsor
@@ -16,7 +14,7 @@ func querySponsor(userID string, apiToken string, totalSponsor int) []*payload.Q
 	sponsor, err := afdian.NewClient(&afdian.Config{
 		UserID:   userID,
 		APIToken: apiToken,
-	}).QuerySponsor(page, perPage)
+	}).QuerySponsor(1, perPage)
 	if err != nil {
 		panic(err)
 	}
@@ -25,6 +23,7 @@ func querySponsor(userID string, apiToken string, totalSponsor int) []*payload.Q
 		totalSponsor = sponsor.Data.TotalCount
 	}
 
+	// ceil total need fetch pages
 	fetchPage := (totalSponsor + perPage - 1) / perPage
 
 	if fetchPage > sponsor.Data.TotalPage {
@@ -34,7 +33,7 @@ func querySponsor(userID string, apiToken string, totalSponsor int) []*payload.Q
 	sponsors := make([]*payload.QuerySponsor, 0, fetchPage)
 	sponsors = append(sponsors, sponsor)
 
-	if fetchPage <= sponsor.Data.TotalPage {
+	if fetchPage <= 1 {
 		return sponsors
 	}
 
