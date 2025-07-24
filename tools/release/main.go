@@ -77,6 +77,7 @@ func main() {
 	executeStep(fmt.Sprintf("Tagging %s...", newTag), "git", "tag", newTag)
 
 	majorVersion := ""
+
 	parts := strings.Split(strings.TrimPrefix(newTag, "v"), ".")
 	if len(parts) > 0 {
 		majorVersion = "v" + parts[0]
