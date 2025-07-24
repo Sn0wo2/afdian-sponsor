@@ -64,6 +64,7 @@ func truncateStringByWidth(s string, limit int) string {
 	}
 
 	width := 0
+
 	runes := []rune(s)
 	for i, r := range runes {
 		width += runewidth.RuneWidth(r)
@@ -137,7 +138,9 @@ func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, marg
 		if len(sponsors) == 0 {
 			return 0
 		}
+
 		rows := (len(sponsors) + avatarsPerRow - 1) / avatarsPerRow
+
 		return rows*rowHeight - margin
 	}
 
@@ -150,6 +153,7 @@ func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, marg
 	}
 
 	lineY := activeHeight + separatorHeight/2
+
 	expiredYOffset := activeHeight
 	if activeHeight > 0 && expiredHeight > 0 {
 		expiredYOffset += separatorHeight
