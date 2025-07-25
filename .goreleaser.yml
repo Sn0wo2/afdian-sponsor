@@ -6,7 +6,7 @@ release:
 
 builds:
   - id: afdian-sponsor
-    main: ./
+    main: ./cmd/action
     binary: afdian-sponsor
     env:
       - CGO_ENABLED=0
@@ -28,9 +28,9 @@ builds:
       - -s -w -buildid=
       - -extldflags=-static
       - -linkmode internal
-      - -X github.com/Sn0wo2/afdian-sponsor/pkg/version.version={{.Version}}
-      - -X github.com/Sn0wo2/afdian-sponsor/pkg/version.commit={{.Commit}}
-      - -X github.com/Sn0wo2/afdian-sponsor/pkg/version.date={{.Date}}
+      - -X github.com/Sn0wo2/afdian-sponsor/internal/version.version={{.Version}}
+      - -X github.com/Sn0wo2/afdian-sponsor/internal/version.commit={{.Commit}}
+      - -X github.com/Sn0wo2/afdian-sponsor/internal/version.date={{.Date}}
 
 dockers:
   - goos: linux

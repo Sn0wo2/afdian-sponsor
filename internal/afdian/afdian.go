@@ -1,11 +1,12 @@
-package main
+package afdian
 
 import (
 	"github.com/Sn0wo2/go-afdian-api"
 	"github.com/Sn0wo2/go-afdian-api/pkg/payload"
 )
 
-func querySponsor(userID string, apiToken string, totalSponsor int) []*payload.QuerySponsor {
+// QuerySponsor queries sponsors from afdian.
+func QuerySponsor(userID string, apiToken string, totalSponsor int) []*payload.QuerySponsor {
 	perPage := 100
 	if totalSponsor < 100 {
 		perPage = totalSponsor

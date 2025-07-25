@@ -1,6 +1,7 @@
-package main
+package types
 
-type sponsor struct {
+// Sponsor holds all the information about a sponsor.
+type Sponsor struct {
 	// Data fields
 	Name         string
 	OriginalName string

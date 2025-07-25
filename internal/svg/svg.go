@@ -1,4 +1,4 @@
-package main
+package svg
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"text/template"
 
+	"github.com/Sn0wo2/afdian-sponsor/internal/types"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -76,13 +77,14 @@ func truncateStringByWidth(s string, limit int) string {
 	return s
 }
 
-func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, margin int, avatarsPerRow int) string {
+// Generate generates an SVG from the given sponsors.
+func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, margin int, avatarsPerRow int) string {
 	nameLimit := avatarSize / 6
 	if nameLimit < 5 {
 		nameLimit = 5
 	}
 
-	processSponsors := func(sponsors []sponsor) {
+	processSponsors := func(sponsors []types.Sponsor) {
 		rowHeight := avatarSize + margin + 35
 		textYMargin := avatarSize + 25
 
@@ -134,7 +136,7 @@ func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, marg
 	rowHeight := avatarSize + margin + 35
 	separatorHeight := 40
 
-	calculateHeight := func(sponsors []sponsor) int {
+	calculateHeight := func(sponsors []types.Sponsor) int {
 		if len(sponsors) == 0 {
 			return 0
 		}
@@ -162,8 +164,8 @@ func generateSVG(activeSponsors, expiredSponsors []sponsor, avatarSize int, marg
 	if err := t.Execute(&b, struct {
 		Width           int
 		Height          int
-		ActiveSponsors  []sponsor
-		ExpiredSponsors []sponsor
+		ActiveSponsors  []types.Sponsor
+		ExpiredSponsors []types.Sponsor
 		LineX1          int
 		LineX2          int
 		LineY           int
