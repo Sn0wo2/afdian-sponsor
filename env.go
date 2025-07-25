@@ -24,7 +24,7 @@ func getConfig() (userID string, apiToken string, output string, totalSponsor in
 	totalSponsor = getEnv("AFDIAN_TOTAL_SPONSORS", 100, parseInt, func(v int) bool { return v > 0 })
 	avatarSize = getEnv("AFDIAN_AVATAR_SIZE", 100, parseInt, func(v int) bool { return v > 0 })
 	margin = getEnv("AFDIAN_MARGIN", 15, parseInt, func(v int) bool { return v != 0 })
-	avatarsPerRow = getEnv("AFDIAN_AVATARS_PER_ROW", 10, parseInt, func(v int) bool { return v > 0 })
+	avatarsPerRow = getEnv("AFDIAN_AVATARS_PER_ROW", 15, parseInt, func(v int) bool { return v > 0 })
 
 	return
 }
