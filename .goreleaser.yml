@@ -6,7 +6,7 @@ release:
 
 builds:
   - id: afdian-sponsor
-    main: ./cmd/action
+    main: ./
     binary: afdian-sponsor
     env:
       - CGO_ENABLED=0

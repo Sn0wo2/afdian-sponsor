@@ -8,9 +8,12 @@ import (
 	"github.com/Sn0wo2/afdian-sponsor/internal/config"
 	"github.com/Sn0wo2/afdian-sponsor/internal/svg"
 	"github.com/Sn0wo2/afdian-sponsor/internal/types"
+	"github.com/Sn0wo2/afdian-sponsor/internal/version"
 )
 
 func main() {
+	fmt.Printf("%s-%s(%s)\n", version.GetVersion(), version.GetCommit(), version.GetDate())
+
 	cfg := config.GetConfig()
 
 	qs := afdian.QuerySponsor(cfg.UserID, cfg.APIToken, cfg.TotalSponsor)
