@@ -37,6 +37,7 @@ func querySponsor(userID string, apiToken string, totalSponsor int) []*payload.Q
 		return sponsors
 	}
 
+	// start from page 2(because page 1 is already fetched)
 	for i := 2; i <= fetchPage; i++ {
 		sponsor, err = afdian.NewClient(&afdian.Config{
 			UserID:   userID,
