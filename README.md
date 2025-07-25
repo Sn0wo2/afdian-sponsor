@@ -11,7 +11,9 @@
 
 ## 👀 Example
 
-See **https://github.com/Sn0wo2/Sn0wo2**
+See **https://github.com/Sn0wo2/Sn0wo2/blob/main/.github/workflows/sponsor.yml**
+
+[![](https://github.com/Sn0wo2/Sn0wo2/raw/refs/heads/out/sponsor/afdian-sponsor.svg)](https://afdian.com/a/Me0wo)
 
 ## 🚀 Usage
 
@@ -30,19 +32,23 @@ jobs:
 
       - name: Run afdian-sponsor action
         uses: Sn0wo2/afdian-sponsor@v1
+        with:
+          # Optional(default values)
+          version: latest
+          cache: true
         env:
           # Required
           # Get User ID and API Token from https://afdian.com/dashboard/dev
+          # And add them to your github secrets(https://github.com/Sn0wo2/your-repo/settings/secrets/actions/new)
           AFDIAN_USER_ID: ${{ secrets.AFDIAN_USER_ID }}
           AFDIAN_API_TOKEN: ${{ secrets.AFDIAN_API_TOKEN }}
 
           # Optional(default values)
-          AFDIAN_OUTPUT: /github/workspace/afdian-sponsor.svg
-          AFDIAN_PAGE: 1
-          AFDIAN_PER_PAGE: 100
+          AFDIAN_OUTPUT: ./
+          AFDIAN_TOTAL_SPONSORS: 100
           AFDIAN_AVATAR_SIZE: 100
           AFDIAN_MARGIN: 15
-          AFDIAN_AVATARS_PER_ROW: 10
+          AFDIAN_AVATARS_PER_ROW: 15
 
       - name: Upload generated SVG
         uses: actions/upload-artifact@v4
@@ -50,3 +56,7 @@ jobs:
           name: afdian-sponsor-svg
           path: afdian-sponsor.svg
 ```
+
+## 🔗 Links
+
+- [go-afdian-api](https://github.com/Sn0wo2/go-afdian-api)
