@@ -39,7 +39,7 @@ jobs:
         env:
           # Required
           # Get User ID and API Token from https://afdian.com/dashboard/dev
-          # And add them to your github secrets(https://github.com/Sn0wo2/your-repo/settings/secrets/actions/new)
+          # And add them to your github secrets(https://github.com/your-user-name/your-repo/settings/secrets/actions/new)
           AFDIAN_USER_ID: ${{ secrets.AFDIAN_USER_ID }}
           AFDIAN_API_TOKEN: ${{ secrets.AFDIAN_API_TOKEN }}
 
