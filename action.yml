@@ -8,7 +8,7 @@ inputs:
     required: false
     default: latest
   cache:
-    description: 'Enable GitHub Actions cache for the binary'
+    description: 'Enable GitHub Actions cache for the binary. Default: true'
     required: false
     default: 'true'
 
