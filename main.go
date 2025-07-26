@@ -30,6 +30,7 @@ func main() {
 			amount, err := strconv.ParseFloat(v.AllSumAmount, 64)
 			if err != nil {
 				fmt.Printf("Warning: Failed to parse AllSumAmount for sponsor %s: %v\n", v.User.Name, err)
+
 				amount = 0
 			}
 
