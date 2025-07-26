@@ -7,6 +7,10 @@ type Sponsor struct {
 	OriginalName string
 	Avatar       string
 
+	// Sort fields
+	AllSumAmount float64 // safe(?)
+	LastPayTime  int
+
 	// SVG rendering fields
 	Index      int
 	CenterX    int

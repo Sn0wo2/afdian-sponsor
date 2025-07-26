@@ -49,6 +49,7 @@ jobs:
           AFDIAN_AVATAR_SIZE: 100
           AFDIAN_MARGIN: 15
           AFDIAN_AVATARS_PER_ROW: 15
+          AFDIAN_SORT: time
 
       - name: Upload generated SVG
         uses: actions/upload-artifact@v4
