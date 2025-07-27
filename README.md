@@ -9,6 +9,8 @@
 [![Go CI](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/go.yml/badge.svg)](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/go.yml)
 [![Release](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/release.yml/badge.svg)](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/release.yml)
 
+---
+
 ## 👀 Example
 
 See **https://github.com/Sn0wo2/Sn0wo2/blob/main/.github/workflows/sponsor.yml**
