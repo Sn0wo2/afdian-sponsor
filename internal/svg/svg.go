@@ -11,8 +11,7 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
-const tpl = `
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {{.Width}} {{.Height}}">
+const tpl = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {{.Width}} {{.Height}}">
 <style>
     .active-text { fill: #000; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     .expired-text { fill: #666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
@@ -20,6 +19,16 @@ const tpl = `
     @media (prefers-color-scheme: dark) {
         .active-text, .expired-text { fill: #fff; }
         .separator { stroke: #333; }
+    }
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
     }
 </style>
 <defs>
@@ -32,11 +41,13 @@ const tpl = `
 </defs>
 <g id="active-sponsors">
 {{range .ActiveSponsors}}
-    <g clip-path="url(#clip-{{.Index}})">
-        <title>{{.OriginalName}}</title>
-        <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
+    <g style="animation: fadeIn 0.5s ease-in-out forwards; animation-delay: {{.AnimationDelay}}s; opacity: 0;">
+        <g clip-path="url(#clip-{{.Index}})">
+            <title>{{.OriginalName}}</title>
+            <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
+        </g>
+        <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="12" class="active-text">{{.Name}}</text>
     </g>
-    <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="12" class="active-text">{{.Name}}</text>
 {{end}}
 </g>
 {{if and .ActiveSponsors .ExpiredSponsors}}
@@ -45,11 +56,13 @@ const tpl = `
 {{if .ExpiredSponsors}}
 <g id="expired-sponsors" transform="translate(0, {{.ExpiredYOffset}})">
 {{range .ExpiredSponsors}}
-    <g clip-path="url(#clip-expired-{{.Index}})" opacity="0.5">
-        <title>{{.OriginalName}}</title>
-        <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
+    <g style="animation: fadeIn 0.5s ease-in-out forwards; animation-delay: {{.AnimationDelay}}s; opacity: 0;">
+        <g clip-path="url(#clip-expired-{{.Index}})" opacity="0.5">
+            <title>{{.OriginalName}}</title>
+            <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
+        </g>
+        <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="12" class="expired-text">{{.Name}}</text>
     </g>
-    <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="12" class="expired-text">{{.Name}}</text>
 {{end}}
 </g>
 {{end}}
@@ -78,7 +91,7 @@ func truncateStringByWidth(s string, limit int) string {
 }
 
 // Generate generates an SVG from the given sponsors.
-func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, margin int, avatarsPerRow int) string {
+func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, margin int, avatarsPerRow int, animationDelay float64) string {
 	nameLimit := avatarSize / 6
 	if nameLimit < 5 {
 		nameLimit = 5
@@ -116,6 +129,7 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 			sponsors[i].AvatarSize = avatarSize
 			sponsors[i].ImgMime = http.DetectContentType(img)
 			sponsors[i].ImgB64 = base64.StdEncoding.EncodeToString(img)
+			sponsors[i].AnimationDelay = float64(i) * animationDelay
 		}
 	}
 

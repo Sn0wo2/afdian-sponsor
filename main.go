@@ -79,7 +79,7 @@ func main() {
 		})
 	}
 
-	if err := os.WriteFile(cfg.Output, []byte(svg.Generate(activeSponsors, expiredSponsors, cfg.AvatarSize, cfg.Margin, cfg.AvatarsPerRow)), 0o644); err != nil { //nolint:gosec
+	if err := os.WriteFile(cfg.Output, []byte(svg.Generate(activeSponsors, expiredSponsors, cfg.AvatarSize, cfg.Margin, cfg.AvatarsPerRow, cfg.AnimationDelay)), 0o644); err != nil { //nolint:gosec
 		panic(err)
 	}
 

@@ -12,14 +12,15 @@ type Sponsor struct {
 	LastPayTime  int
 
 	// SVG rendering fields
-	Index      int
-	CenterX    int
-	CenterY    int
-	X          int
-	Y          int
-	TextY      int
-	Radius     int
-	AvatarSize int
-	ImgMime    string
-	ImgB64     string
+	Index          int
+	CenterX        int
+	CenterY        int
+	X              int
+	Y              int
+	TextY          int
+	Radius         int
+	AvatarSize     int
+	ImgMime        string
+	ImgB64         string
+	AnimationDelay float64
 }
