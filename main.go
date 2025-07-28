@@ -57,17 +57,17 @@ func main() {
 	switch cfg.Sort {
 	case "name":
 		sort.Slice(activeSponsors, func(i, j int) bool {
-			return activeSponsors[i].Name < activeSponsors[j].Name
+			return activeSponsors[i].Name > activeSponsors[j].Name
 		})
 		sort.Slice(expiredSponsors, func(i, j int) bool {
-			return expiredSponsors[i].Name < expiredSponsors[j].Name
+			return expiredSponsors[i].Name > expiredSponsors[j].Name
 		})
 	case "amount":
 		sort.Slice(activeSponsors, func(i, j int) bool {
-			return activeSponsors[i].AllSumAmount < activeSponsors[j].AllSumAmount
+			return activeSponsors[i].AllSumAmount > activeSponsors[j].AllSumAmount
 		})
 		sort.Slice(expiredSponsors, func(i, j int) bool {
-			return expiredSponsors[i].AllSumAmount < expiredSponsors[j].AllSumAmount
+			return expiredSponsors[i].AllSumAmount > expiredSponsors[j].AllSumAmount
 		})
 	// time
 	default:
