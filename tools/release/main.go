@@ -84,6 +84,7 @@ func main() {
 	}
 
 	ExecuteStep(fmt.Sprintf("Pushing %s...", newTag), "git", "push", "origin", newTag)
+
 	if majorVersion != "" && majorVersion != newTag {
 		ExecuteStep(fmt.Sprintf("Pushing %s...", majorVersion), "git", "push", "--force", "origin", majorVersion)
 	}
