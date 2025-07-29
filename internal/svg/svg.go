@@ -13,8 +13,8 @@ import (
 
 const tpl = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {{.Width}} {{.Height}}">
 <style>
-    .active-text { fill: #000; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-    .expired-text { fill: #666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .active-text { fill: #000000; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .expired-text { fill: #666666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     .separator { stroke: #eeeeee; }
     @media (prefers-color-scheme: dark) {
         .active-text, .expired-text { fill: #fff; }
@@ -91,13 +91,13 @@ func truncateStringByWidth(s string, limit int) string {
 }
 
 // Generate generates an SVG from the given sponsors.
-func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, margin int, avatarsPerRow int, animationDelay float64) string {
+func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, margin int, avatarsPerRow int, animationDelay float32) string {
 	nameLimit := avatarSize / 6
 	if nameLimit < 5 {
 		nameLimit = 5
 	}
 
-	processSponsors := func(sponsors []types.Sponsor) {
+	processSponsors := func(sponsors []types.Sponsor, active ...bool) {
 		rowHeight := avatarSize + margin + 35
 		textYMargin := avatarSize + 25
 
@@ -129,11 +129,15 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 			sponsors[i].AvatarSize = avatarSize
 			sponsors[i].ImgMime = http.DetectContentType(img)
 			sponsors[i].ImgB64 = base64.StdEncoding.EncodeToString(img)
-			sponsors[i].AnimationDelay = float64(i) * animationDelay
+			if len(active) > 0 && active[0] {
+				sponsors[i].AnimationDelay = float32(i) * animationDelay
+			} else {
+				sponsors[i].AnimationDelay = float32(i) * animationDelay / 1.5
+			}
 		}
 	}
 
-	processSponsors(activeSponsors)
+	processSponsors(activeSponsors, true)
 	processSponsors(expiredSponsors)
 
 	if len(activeSponsors) == 0 && len(expiredSponsors) == 0 {

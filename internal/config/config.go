@@ -17,7 +17,7 @@ type Config struct {
 	Margin         int
 	AvatarsPerRow  int
 	Sort           string
-	AnimationDelay float64
+	AnimationDelay float32
 }
 
 // GetConfig reads all the configuration from the environment variables.
@@ -33,15 +33,21 @@ func GetConfig() *Config {
 	fmt.Printf("Env AFDIAN_API_TOKEN: %s\n", apiToken)
 
 	return &Config{
-		UserID:         userID,
-		APIToken:       apiToken,
-		Output:         getEnv("AFDIAN_OUTPUT", "./afdian-sponsor.svg", func(s string) (string, error) { return s, nil }, func(v string) bool { return v != "" }),
-		TotalSponsor:   getEnv("AFDIAN_TOTAL_SPONSORS", 100, strconv.Atoi, func(v int) bool { return v > 0 }),
-		AvatarSize:     getEnv("AFDIAN_AVATAR_SIZE", 100, strconv.Atoi, func(v int) bool { return v > 0 }),
-		Margin:         getEnv("AFDIAN_MARGIN", 15, strconv.Atoi, func(v int) bool { return v != 0 }),
-		AvatarsPerRow:  getEnv("AFDIAN_AVATARS_PER_ROW", 15, strconv.Atoi, func(v int) bool { return v > 0 }),
-		Sort:           getEnv("AFDIAN_SORT", "time", func(s string) (string, error) { return strings.ToLower(s), nil }, func(v string) bool { return v != "" }),
-		AnimationDelay: getEnv("AFDIAN_ANIMATION_DELAY", 0.1, func(s string) (float64, error) { return strconv.ParseFloat(s, 64) }, func(v float64) bool { return v > 0 }),
+		UserID:        userID,
+		APIToken:      apiToken,
+		Output:        getEnv("AFDIAN_OUTPUT", "./afdian-sponsor.svg", func(s string) (string, error) { return s, nil }, func(v string) bool { return v != "" }),
+		TotalSponsor:  getEnv("AFDIAN_TOTAL_SPONSORS", 100, strconv.Atoi, func(v int) bool { return v > 0 }),
+		AvatarSize:    getEnv("AFDIAN_AVATAR_SIZE", 100, strconv.Atoi, func(v int) bool { return v > 0 }),
+		Margin:        getEnv("AFDIAN_MARGIN", 15, strconv.Atoi, func(v int) bool { return v != 0 }),
+		AvatarsPerRow: getEnv("AFDIAN_AVATARS_PER_ROW", 15, strconv.Atoi, func(v int) bool { return v > 0 }),
+		Sort:          getEnv("AFDIAN_SORT", "time", func(s string) (string, error) { return strings.ToLower(s), nil }, func(v string) bool { return v != "" }),
+		AnimationDelay: getEnv("AFDIAN_ANIMATION_DELAY", 0.3, func(s string) (float32, error) {
+			f, err := strconv.ParseFloat(s, 32)
+			if err != nil {
+				return 0, err
+			}
+			return float32(f), nil
+		}, func(v float32) bool { return v == 0 }),
 	}
 }
 

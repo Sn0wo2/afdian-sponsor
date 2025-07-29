@@ -22,5 +22,5 @@ type Sponsor struct {
 	AvatarSize     int
 	ImgMime        string
 	ImgB64         string
-	AnimationDelay float64
+	AnimationDelay float32
 }
