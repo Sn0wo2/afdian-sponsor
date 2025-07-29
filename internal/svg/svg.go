@@ -128,6 +128,7 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 			sponsors[i].Radius = avatarSize / 2
 			sponsors[i].AvatarSize = avatarSize
 			sponsors[i].ImgMime = http.DetectContentType(img)
+
 			sponsors[i].ImgB64 = base64.StdEncoding.EncodeToString(img)
 			if len(active) > 0 && active[0] {
 				sponsors[i].AnimationDelay = float32(i) * animationDelay

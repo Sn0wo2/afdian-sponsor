@@ -46,6 +46,7 @@ func GetConfig() *Config {
 			if err != nil {
 				return 0, err
 			}
+
 			return float32(f), nil
 		}, func(v float32) bool { return v == 0 }),
 	}
