@@ -75,6 +75,7 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 	}
 
 	fontSize := avatarSize / 8
+
 	nameLimit := avatarSize * 2 / fontSize
 	if nameLimit < 5 {
 		nameLimit = 5
@@ -96,10 +97,12 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 			if err != nil {
 				panic(err)
 			}
+
 			img, err := io.ReadAll(resp.Body)
 			if err != nil {
 				panic(err)
 			}
+
 			_ = resp.Body.Close()
 
 			sponsors[i].Index = i
@@ -147,6 +150,7 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 			return num
 		}
 	}
+
 	itemsInRow := getMaxItemsInRow(activeSponsors)
 	if expiredItems := getMaxItemsInRow(expiredSponsors); expiredItems > itemsInRow {
 		itemsInRow = expiredItems
@@ -156,6 +160,7 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 	if itemsInRow > 0 {
 		contentWidth = itemsInRow*(avatarSize+margin) - margin
 	}
+
 	width := contentWidth + paddingX*2
 
 	t, err := template.New("svg").Parse(tpl)
