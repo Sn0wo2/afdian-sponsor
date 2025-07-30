@@ -72,10 +72,10 @@ func main() {
 	// time
 	default:
 		sort.Slice(activeSponsors, func(i, j int) bool {
-			return activeSponsors[i].LastPayTime < activeSponsors[j].LastPayTime
+			return activeSponsors[i].LastPayTime > activeSponsors[j].LastPayTime
 		})
 		sort.Slice(expiredSponsors, func(i, j int) bool {
-			return expiredSponsors[i].LastPayTime < expiredSponsors[j].LastPayTime
+			return expiredSponsors[i].LastPayTime > expiredSponsors[j].LastPayTime
 		})
 	}
 
