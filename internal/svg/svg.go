@@ -46,7 +46,7 @@ const tpl = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.
             <title>{{.OriginalName}}</title>
             <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
         </g>
-        <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="12" class="active-text">{{.Name}}</text>
+        <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="{{$.FontSize}}" class="active-text">{{.Name}}</text>
     </g>
 {{end}}
 </g>
@@ -61,7 +61,7 @@ const tpl = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.
             <title>{{.OriginalName}}</title>
             <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
         </g>
-        <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="12" class="expired-text">{{.Name}}</text>
+        <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="{{$.FontSize}}" class="expired-text">{{.Name}}</text>
     </g>
 {{end}}
 </g>
@@ -92,14 +92,16 @@ func truncateStringByWidth(s string, limit int) string {
 
 // Generate generates an SVG from the given sponsors.
 func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, margin int, avatarsPerRow int, animationDelay float32) string {
-	nameLimit := avatarSize / 6
+	fontSize := avatarSize / 8
+
+	nameLimit := avatarSize * 2 / fontSize
 	if nameLimit < 5 {
 		nameLimit = 5
 	}
 
 	processSponsors := func(sponsors []types.Sponsor, active ...bool) {
-		rowHeight := avatarSize + margin + 35
-		textYMargin := avatarSize + 25
+		rowHeight := avatarSize + margin + fontSize + 24
+		textYMargin := avatarSize + fontSize + 12
 
 		for i := range sponsors {
 			sponsors[i].OriginalName = sponsors[i].Name
@@ -152,7 +154,7 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 
 	var b bytes.Buffer
 
-	rowHeight := avatarSize + margin + 35
+	rowHeight := avatarSize + margin + fontSize + 24
 	separatorHeight := 40
 
 	calculateHeight := func(sponsors []types.Sponsor) int {
@@ -183,6 +185,7 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 	if err := t.Execute(&b, struct {
 		Width           int
 		Height          int
+		FontSize        int
 		ActiveSponsors  []types.Sponsor
 		ExpiredSponsors []types.Sponsor
 		LineX1          int
@@ -192,6 +195,7 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 	}{
 		Width:           avatarsPerRow*(avatarSize+margin) - margin,
 		Height:          height,
+		FontSize:        fontSize,
 		ActiveSponsors:  activeSponsors,
 		ExpiredSponsors: expiredSponsors,
 		LineX1:          avatarSize / 2,
