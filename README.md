@@ -5,6 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/Sn0wo2/afdian-sponsor)](https://goreportcard.com/report/github.com/Sn0wo2/afdian-sponsor)
 [![GitHub release](https://img.shields.io/github/v/release/Sn0wo2/afdian-sponsor?color=blue)](https://github.com/Sn0wo2/afdian-sponsor/releases)
 [![GitHub License](https://img.shields.io/github/license/Sn0wo2/afdian-sponsor)](LICENSE)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FSn0wo2%2Fafdian-sponsor.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FSn0wo2%2Fafdian-sponsor?ref=badge_shield)
 
 [![Go CI](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/go.yml/badge.svg)](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/go.yml)
 [![Release](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/release.yml/badge.svg)](https://github.com/Sn0wo2/afdian-sponsor/actions/workflows/release.yml)
@@ -63,3 +64,6 @@ jobs:
 ## 🔗 Links
 
 - [go-afdian-api](https://github.com/Sn0wo2/go-afdian-api)
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FSn0wo2%2Fafdian-sponsor.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FSn0wo2%2Fafdian-sponsor?ref=badge_large)
