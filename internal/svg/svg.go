@@ -143,19 +143,6 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 
 	height := paddingY + activeHeight + separatorHeight + expiredHeight + paddingY
 
-	getMaxItemsInRow := func(sponsors []types.Sponsor) int {
-		if num := len(sponsors); num >= avatarsPerRow {
-			return avatarsPerRow
-		} else {
-			return num
-		}
-	}
-
-	itemsInRow := getMaxItemsInRow(activeSponsors)
-	if expiredItems := getMaxItemsInRow(expiredSponsors); expiredItems > itemsInRow {
-		itemsInRow = expiredItems
-	}
-
 	contentWidth := 0
 	if len(activeSponsors) > 0 || len(expiredSponsors) > 0 {
 		contentWidth = avatarsPerRow*(avatarSize+margin) - margin
