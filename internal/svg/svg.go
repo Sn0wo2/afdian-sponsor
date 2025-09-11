@@ -157,8 +157,8 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 	}
 
 	contentWidth := 0
-	if itemsInRow > 0 {
-		contentWidth = itemsInRow*(avatarSize+margin) - margin
+	if len(activeSponsors) > 0 || len(expiredSponsors) > 0 {
+		contentWidth = avatarsPerRow*(avatarSize+margin) - margin
 	}
 
 	width := contentWidth + paddingX*2
@@ -188,7 +188,7 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 		LineX1:          paddingX,
 		LineX2:          width - paddingX,
 		LineY:           paddingY + activeHeight + separatorHeight/2,
-		ExpiredYOffset:  0, // Y coordinates are now absolute
+		ExpiredYOffset:  0,
 	}); err != nil {
 		panic(err)
 	}
