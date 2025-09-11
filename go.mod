@@ -1,6 +1,6 @@
 module github.com/Sn0wo2/afdian-sponsor
 
-go 1.24.5
+go 1.25.1
 
 require (
 	github.com/Sn0wo2/go-afdian-api v1.3.0
