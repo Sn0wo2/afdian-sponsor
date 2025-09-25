@@ -4,7 +4,7 @@ go 1.25.1
 
 require (
 	github.com/Sn0wo2/go-afdian-api v1.3.0
-	github.com/mattn/go-runewidth v0.0.16
+	github.com/mattn/go-runewidth v0.0.17
 )
 
 require (
