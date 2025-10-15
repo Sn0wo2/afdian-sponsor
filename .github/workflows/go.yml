@@ -23,12 +23,6 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
-      - name: Update dependencies
-        run: go get all
-
-      - name: Update go.sum
-        run: go mod tidy
-
       - name: Run vet
         run: go vet ./...
 
@@ -36,7 +30,10 @@ jobs:
         run: go test ./...
 
       - name: Build binary
-        run: go build -v .
+        run: go build -v -o BuildTest ./cmd
+
+      - name: Remove binary
+        run: rm BuildTest
 
       - name: Check for file changes
         id: git-check
