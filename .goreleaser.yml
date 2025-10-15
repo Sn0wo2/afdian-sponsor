@@ -28,9 +28,9 @@ builds:
       - -s -w -buildid=
       - -extldflags=-static
       - -linkmode internal
-      - -X github.com/Sn0wo2/afdian-sponsor/internal/version.version={{.Version}}
-      - -X github.com/Sn0wo2/afdian-sponsor/internal/version.commit={{.Commit}}
-      - -X github.com/Sn0wo2/afdian-sponsor/internal/version.date={{.Date}}
+      - -X github.com/Sn0wo2/afdian-sponsor/version.version={{.Version}}
+      - -X github.com/Sn0wo2/afdian-sponsor/version.commit={{.Commit}}
+      - -X github.com/Sn0wo2/afdian-sponsor/version.date={{.Date}}
 
 dockers:
   - goos: linux
