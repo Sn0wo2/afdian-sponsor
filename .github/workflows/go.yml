@@ -30,7 +30,7 @@ jobs:
         run: go test ./...
 
       - name: Build binary
-        run: go build -v -o BuildTest ./cmd
+        run: go build -v -o BuildTest ./
 
       - name: Remove binary
         run: rm BuildTest
