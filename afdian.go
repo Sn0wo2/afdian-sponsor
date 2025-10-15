@@ -1,4 +1,4 @@
-package afdian
+package main
 
 import (
 	"github.com/Sn0wo2/go-afdian-api"

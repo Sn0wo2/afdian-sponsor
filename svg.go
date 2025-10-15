@@ -1,4 +1,4 @@
-package svg
+package main
 
 import (
 	"bytes"
@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"text/template"
 
-	common "github.com/Sn0wo2/afdian-sponsor/internal/common/strings"
-	"github.com/Sn0wo2/afdian-sponsor/internal/types"
+	common "github.com/Sn0wo2/afdian-sponsor/internal/helper"
 )
 
 const tpl = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {{.Width}} {{.Height}}">
@@ -69,7 +68,7 @@ const tpl = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.
 </svg>`
 
 // Generate generates an SVG from the given sponsors.
-func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, margin int, avatarsPerRow int, animationDelay float32) string {
+func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin int, avatarsPerRow int, animationDelay float32) string {
 	if len(activeSponsors) == 0 && len(expiredSponsors) == 0 {
 		return `<svg width="1135" height="100" xmlns="http://www.w3.org/2000/svg" style="background-color:transparent;"></svg>`
 	}
@@ -86,7 +85,7 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 	rowHeight := avatarSize + margin + fontSize + 10
 	textYMargin := avatarSize + fontSize + 10
 
-	processSponsors := func(sponsors []types.Sponsor, startY int, active ...bool) {
+	processSponsors := func(sponsors []Sponsor, startY int, active ...bool) {
 		for i := range sponsors {
 			sponsors[i].OriginalName = sponsors[i].Name
 			if common.StringWidth(sponsors[i].Name) > nameLimit {
@@ -160,8 +159,8 @@ func Generate(activeSponsors, expiredSponsors []types.Sponsor, avatarSize int, m
 		Width           int
 		Height          int
 		FontSize        int
-		ActiveSponsors  []types.Sponsor
-		ExpiredSponsors []types.Sponsor
+		ActiveSponsors  []Sponsor
+		ExpiredSponsors []Sponsor
 		LineX1          int
 		LineX2          int
 		LineY           int

@@ -6,23 +6,19 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/Sn0wo2/afdian-sponsor/internal/afdian"
-	"github.com/Sn0wo2/afdian-sponsor/internal/config"
-	"github.com/Sn0wo2/afdian-sponsor/internal/svg"
-	"github.com/Sn0wo2/afdian-sponsor/internal/types"
-	"github.com/Sn0wo2/afdian-sponsor/internal/version"
+	"github.com/Sn0wo2/afdian-sponsor/version"
 )
 
 func main() {
 	fmt.Printf("afdian-sponsor %s-%s(%s)\n", version.GetVersion(), version.GetCommit(), version.GetDate())
 
-	cfg := config.GetConfig()
+	cfg := GetConfig()
 
-	qs := afdian.QuerySponsor(cfg.UserID, cfg.APIToken, cfg.TotalSponsor)
+	qs := QuerySponsor(cfg.UserID, cfg.APIToken, cfg.TotalSponsor)
 
 	var (
-		activeSponsors  []types.Sponsor
-		expiredSponsors []types.Sponsor
+		activeSponsors  []Sponsor
+		expiredSponsors []Sponsor
 	)
 
 	for _, s := range qs {
@@ -35,7 +31,7 @@ func main() {
 			}
 
 			if v.CurrentPlan.Name == "" {
-				expiredSponsors = append(expiredSponsors, types.Sponsor{
+				expiredSponsors = append(expiredSponsors, Sponsor{
 					Name:         v.User.Name,
 					Avatar:       v.User.Avatar,
 					AllSumAmount: amount,
@@ -45,7 +41,7 @@ func main() {
 				continue
 			}
 
-			activeSponsors = append(activeSponsors, types.Sponsor{
+			activeSponsors = append(activeSponsors, Sponsor{
 				Name:         v.User.Name,
 				Avatar:       v.User.Avatar,
 				AllSumAmount: amount,
@@ -79,7 +75,7 @@ func main() {
 		})
 	}
 
-	if err := os.WriteFile(cfg.Output, []byte(svg.Generate(activeSponsors, expiredSponsors, cfg.AvatarSize, cfg.Margin, cfg.AvatarsPerRow, cfg.AnimationDelay)), 0o644); err != nil { //nolint:gosec
+	if err := os.WriteFile(cfg.Output, []byte(Generate(activeSponsors, expiredSponsors, cfg.AvatarSize, cfg.Margin, cfg.AvatarsPerRow, cfg.AnimationDelay)), 0o644); err != nil { //nolint:gosec
 		panic(err)
 	}
 

@@ -1,4 +1,4 @@
-package types
+package main
 
 // Sponsor holds all the information about a sponsor.
 type Sponsor struct {

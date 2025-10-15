@@ -1,8 +1,18 @@
-package common
+package helper
 
 import (
+	"unsafe"
+
 	"github.com/mattn/go-runewidth"
 )
+
+func BytesToString(v []byte) string {
+	return *(*string)(unsafe.Pointer(&v)) //nolint:gosec
+}
+
+func StringToBytes(v string) []byte {
+	return unsafe.Slice(unsafe.StringData(v), len(v)) //nolint:gosec
+}
 
 func StringWidth(s string) int {
 	return runewidth.StringWidth(s)
