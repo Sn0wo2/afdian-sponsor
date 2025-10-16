@@ -164,7 +164,7 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 
 	var b bytes.Buffer
 
-	return b.String(), t.Execute(&b, struct {
+	err = t.Execute(&b, struct {
 		Width           int
 		Height          int
 		FontSize        int
@@ -185,4 +185,6 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 		LineY:           paddingY + activeHeight + separatorHeight/2,
 		ExpiredYOffset:  0,
 	})
+
+	return b.String(), err
 }
