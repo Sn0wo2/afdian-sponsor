@@ -6,8 +6,10 @@ import (
 	"time"
 )
 
+type contextKey string
+
 const (
-	RetryCountKey = "retry-count"
+	RetryCountKey = contextKey("retry-count")
 )
 
 type XHTTP struct {
@@ -34,7 +36,8 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	xHTTP := &XHTTP{t.RetryCount, 0, t.Cooldown}
 
-	req = req.WithContext(context.WithValue(req.Context(), RetryCountKey, xHTTP))
+	ctx := context.WithValue(req.Context(), RetryCountKey, xHTTP)
+	req = req.WithContext(ctx)
 
 	resp, err := base.RoundTrip(req)
 	if err == nil {
@@ -43,7 +46,8 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	for i := uint8(1); i <= t.RetryCount; i++ {
 		xHTTP.NowRetryCount = i
-		req = req.WithContext(context.WithValue(req.Context(), RetryCountKey, xHTTP))
+		ctx := context.WithValue(ctx, RetryCountKey, xHTTP)
+		req = req.WithContext(ctx)
 
 		if t.OnRetry != nil {
 			t.OnRetry(xHTTP, err)
@@ -79,8 +83,10 @@ func GetRetryCount(req *http.Request) *XHTTP {
 	if req == nil {
 		return nil
 	}
+
 	if xHTTP, ok := req.Context().Value(RetryCountKey).(*XHTTP); ok {
 		return xHTTP
 	}
+
 	return nil
 }

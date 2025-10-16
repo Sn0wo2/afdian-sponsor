@@ -124,6 +124,7 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 				sponsors[i].AnimationDelay = animationIndex * animationDelay / 1.5
 			}
 		}
+
 		return nil
 	}
 
@@ -140,6 +141,7 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 	}
 
 	expiredStartY := paddingY + activeHeight + separatorHeight
+
 	err := processSponsors(expiredSponsors, expiredStartY)
 	if err != nil {
 		return emptySVG, err

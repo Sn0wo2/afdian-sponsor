@@ -19,6 +19,7 @@ func main() {
 	})
 
 	fmt.Printf("afdian-sponsor %s-%s(%s)\n", version.GetVersion(), version.GetCommit(), version.GetDate())
+
 	cfg := GetConfig()
 
 	qs := QuerySponsor(cfg.UserID, cfg.APIToken, cfg.TotalSponsor)
