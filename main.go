@@ -14,7 +14,9 @@ import (
 )
 
 func main() {
-	http.DefaultClient = xhttp.NewClient(3, 2*time.Second)
+	http.DefaultClient = xhttp.NewClient(3, 2*time.Second, func(xHTTP *xhttp.XHTTP, err error) {
+		fmt.Printf("HTTP request failed, retrying... (attempt: %d, max: %d, cd: %s, error: %v)\n", xHTTP.NowRetryCount, xHTTP.MaxRetryCount, xHTTP.Cooldown.String(), err)
+	})
 
 	fmt.Printf("afdian-sponsor %s-%s(%s)\n", version.GetVersion(), version.GetCommit(), version.GetDate())
 	cfg := GetConfig()
