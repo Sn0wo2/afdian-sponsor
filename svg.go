@@ -10,7 +10,7 @@ import (
 	common "github.com/Sn0wo2/afdian-sponsor/internal/helper"
 )
 
-const tpl = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {{.Width}} {{.Height}}">
+const svgTPL = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {{.Width}} {{.Height}}">
 <style>
     .active-text { fill: #000000; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     .expired-text { fill: #666666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
@@ -67,10 +67,12 @@ const tpl = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.
 {{end}}
 </svg>`
 
+const emptySVG = `<svg width="1135" height="100" xmlns="http://www.w3.org/2000/svg" style="background-color:transparent;"></svg>`
+
 // Generate generates an SVG from the given sponsors.
-func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin int, avatarsPerRow int, animationDelay float32) string {
+func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin int, avatarsPerRow int, animationDelay float32) (string, error) {
 	if len(activeSponsors) == 0 && len(expiredSponsors) == 0 {
-		return `<svg width="1135" height="100" xmlns="http://www.w3.org/2000/svg" style="background-color:transparent;"></svg>`
+		return emptySVG, nil
 	}
 
 	fontSize := avatarSize / 8
@@ -85,7 +87,7 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 	rowHeight := avatarSize + margin + fontSize + 10
 	textYMargin := avatarSize + fontSize + 10
 
-	processSponsors := func(sponsors []Sponsor, startY int, active ...bool) {
+	processSponsors := func(sponsors []Sponsor, startY int, active ...bool) error {
 		for i := range sponsors {
 			sponsors[i].OriginalName = sponsors[i].Name
 			if common.StringWidth(sponsors[i].Name) > nameLimit {
@@ -94,12 +96,12 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 
 			resp, err := http.Get(sponsors[i].Avatar)
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			img, err := io.ReadAll(resp.Body)
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			_ = resp.Body.Close()
@@ -122,9 +124,12 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 				sponsors[i].AnimationDelay = animationIndex * animationDelay / 1.5
 			}
 		}
+		return nil
 	}
 
-	processSponsors(activeSponsors, paddingY, true)
+	if err := processSponsors(activeSponsors, paddingY, true); err != nil {
+		return emptySVG, err
+	}
 
 	numActiveRows := (len(activeSponsors) + avatarsPerRow - 1) / avatarsPerRow
 	activeHeight := numActiveRows * rowHeight
@@ -135,7 +140,10 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 	}
 
 	expiredStartY := paddingY + activeHeight + separatorHeight
-	processSponsors(expiredSponsors, expiredStartY)
+	err := processSponsors(expiredSponsors, expiredStartY)
+	if err != nil {
+		return emptySVG, err
+	}
 
 	numExpiredRows := (len(expiredSponsors) + avatarsPerRow - 1) / avatarsPerRow
 	expiredHeight := numExpiredRows * rowHeight
@@ -149,13 +157,14 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 
 	width := contentWidth + paddingX*2
 
-	t, err := template.New("svg").Parse(tpl)
+	t, err := template.New("svg").Parse(svgTPL)
 	if err != nil {
-		panic(err)
+		return emptySVG, err
 	}
 
 	var b bytes.Buffer
-	if err := t.Execute(&b, struct {
+
+	return b.String(), t.Execute(&b, struct {
 		Width           int
 		Height          int
 		FontSize        int
@@ -175,9 +184,5 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 		LineX2:          width - paddingX,
 		LineY:           paddingY + activeHeight + separatorHeight/2,
 		ExpiredYOffset:  0,
-	}); err != nil {
-		panic(err)
-	}
-
-	return b.String()
+	})
 }
