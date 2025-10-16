@@ -2,16 +2,21 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
+	"time"
 
+	"github.com/Sn0wo2/afdian-sponsor/internal/helper"
+	"github.com/Sn0wo2/afdian-sponsor/internal/xhttp"
 	"github.com/Sn0wo2/afdian-sponsor/version"
 )
 
 func main() {
-	fmt.Printf("afdian-sponsor %s-%s(%s)\n", version.GetVersion(), version.GetCommit(), version.GetDate())
+	http.DefaultClient = xhttp.NewClient(3, 2*time.Second)
 
+	fmt.Printf("afdian-sponsor %s-%s(%s)\n", version.GetVersion(), version.GetCommit(), version.GetDate())
 	cfg := GetConfig()
 
 	qs := QuerySponsor(cfg.UserID, cfg.APIToken, cfg.TotalSponsor)
@@ -75,7 +80,12 @@ func main() {
 		})
 	}
 
-	if err := os.WriteFile(cfg.Output, []byte(Generate(activeSponsors, expiredSponsors, cfg.AvatarSize, cfg.Margin, cfg.AvatarsPerRow, cfg.AnimationDelay)), 0o644); err != nil { //nolint:gosec
+	svg, err := Generate(activeSponsors, expiredSponsors, cfg.AvatarSize, cfg.Margin, cfg.AvatarsPerRow, cfg.AnimationDelay)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := os.WriteFile(cfg.Output, helper.StringToBytes(svg), 0o644); err != nil { //nolint:gosec
 		panic(err)
 	}
 
