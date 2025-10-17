@@ -3,7 +3,7 @@ module github.com/Sn0wo2/afdian-sponsor
 go 1.25.2
 
 require (
-	github.com/Sn0wo2/go-afdian-api v1.3.0
+	github.com/Sn0wo2/go-afdian-api v1.3.2
 	github.com/mattn/go-runewidth v0.0.19
 )
 
