@@ -64,6 +64,7 @@ func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cf
 	}
 
 	fontSize := cfg.AvatarSize / 8
+
 	nameLimit := cfg.AvatarSize * 2 / fontSize
 	if nameLimit < 5 {
 		nameLimit = 5
@@ -76,10 +77,12 @@ func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cf
 
 	numActiveRows := (len(activeSponsors) + cfg.AvatarsPerRow - 1) / cfg.AvatarsPerRow
 	activeHeight := numActiveRows * rowHeight
+
 	separatorHeight := 0
 	if len(activeSponsors) > 0 && len(expiredSponsors) > 0 {
 		separatorHeight = 40
 	}
+
 	numExpiredRows := (len(expiredSponsors) + cfg.AvatarsPerRow - 1) / cfg.AvatarsPerRow
 	expiredHeight := numExpiredRows * rowHeight
 	height := paddingY + activeHeight + separatorHeight + expiredHeight
@@ -88,6 +91,7 @@ func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cf
 	svgCenterY := height / 2
 
 	var allSponsors []Sponsor
+
 	allSponsors = append(allSponsors, activeSponsors...)
 	allSponsors = append(allSponsors, expiredSponsors...)
 
@@ -101,6 +105,7 @@ func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cf
 		if err != nil {
 			return err
 		}
+
 		defer func() {
 			_ = resp.Body.Close()
 		}()
@@ -119,6 +124,7 @@ func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cf
 		sponsor.TextY = textYOffset
 
 		var finalY, finalX int
+
 		if isActive {
 			rowIndex := index / cfg.AvatarsPerRow
 			colIndex := index % cfg.AvatarsPerRow
@@ -126,15 +132,18 @@ func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cf
 			finalX = paddingX + colIndex*(cfg.AvatarSize+cfg.Margin) + sponsor.Radius
 		} else {
 			activeRows := (activeCount + cfg.AvatarsPerRow - 1) / cfg.AvatarsPerRow
+
 			separator := 0
 			if activeCount > 0 {
 				separator = separatorHeight
 			}
+
 			rowIndex := (index - activeCount) / cfg.AvatarsPerRow
 			colIndex := (index - activeCount) % cfg.AvatarsPerRow
 			finalY = paddingY + activeRows*rowHeight + separator + rowIndex*rowHeight + sponsor.Radius
 			finalX = paddingX + colIndex*(cfg.AvatarSize+cfg.Margin) + sponsor.Radius
 		}
+
 		sponsor.CenterY = finalY
 		sponsor.CenterX = finalX
 
@@ -153,6 +162,7 @@ func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cf
 				sponsor.Opacity = cfg.ExpiredSponsorOpacity
 			}
 		}
+
 		return nil
 	}
 
@@ -169,6 +179,7 @@ func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cf
 	}
 
 	var b bytes.Buffer
+
 	err = t.Execute(&b, struct {
 		Width           int
 		Height          int

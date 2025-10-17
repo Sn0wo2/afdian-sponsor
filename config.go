@@ -56,6 +56,7 @@ func float32Parser(s string) (float32, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return float32(f), nil
 }
 
