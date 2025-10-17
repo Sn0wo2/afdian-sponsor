@@ -19,145 +19,147 @@ const svgTPL = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.
         .active-text, .expired-text { fill: #fff; }
         .separator { stroke: #333; }
     }
-    @keyframes fadeIn {
+    @keyframes pop-out {
         from {
             opacity: 0;
-            transform: translateX(-20px);
+            transform: translate(var(--tx, 0), var(--ty, 0)) scale(0.5);
         }
         to {
             opacity: 1;
-            transform: translateX(0);
+            transform: translate(0, 0) scale(1);
         }
+    }
+    .sponsor-group {
+        animation: pop-out 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        opacity: 0;
     }
 </style>
 <defs>
-{{range .ActiveSponsors}}
-    <clipPath id="clip-{{.Index}}"><circle cx="{{.CenterX}}" cy="{{.CenterY}}" r="{{.Radius}}"/></clipPath>
-{{end}}
-{{range .ExpiredSponsors}}
-    <clipPath id="clip-expired-{{.Index}}"><circle cx="{{.CenterX}}" cy="{{.CenterY}}" r="{{.Radius}}"/></clipPath>
+{{range .Sponsors}}
+    <clipPath id="clip-{{.Index}}"><circle cx="0" cy="0" r="{{.Radius}}"/></clipPath>
 {{end}}
 </defs>
-<g id="active-sponsors">
-{{range .ActiveSponsors}}
-    <g style="animation: fadeIn 0.5s ease-in-out forwards; animation-delay: {{.AnimationDelay}}s; opacity: 0;">
-        <g clip-path="url(#clip-{{.Index}})">
-            <title>{{.OriginalName}}</title>
-            <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
+{{range .Sponsors}}
+    <g transform="translate({{.CenterX}}, {{.CenterY}})" style="opacity: {{.Opacity}};">
+        <g class="sponsor-group" style="animation-delay: {{.AnimationDelay}}s; --tx: {{.TranslateX}}px; --ty: {{.TranslateY}}px;">
+            <g clip-path="url(#clip-{{.Index}})">
+                <title>{{.OriginalName}}</title>
+                <image x="-{{.Radius}}" y="-{{.Radius}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
+            </g>
+            <text y="{{.TextY}}" text-anchor="middle" font-size="{{$.FontSize}}" class="{{if .IsActive}}active-text{{else}}expired-text{{end}}">{{.Name}}</text>
         </g>
-        <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="{{$.FontSize}}" class="active-text">{{.Name}}</text>
     </g>
 {{end}}
-</g>
 {{if and .ActiveSponsors .ExpiredSponsors}}
 <line class="separator" x1="{{.LineX1}}" y1="{{.LineY}}" x2="{{.LineX2}}" y2="{{.LineY}}" stroke-width="1"/>
-{{end}}
-{{if .ExpiredSponsors}}
-<g id="expired-sponsors">
-{{range .ExpiredSponsors}}
-    <g style="animation: fadeIn 0.5s ease-in-out forwards; animation-delay: {{.AnimationDelay}}s; opacity: 0;">
-        <g clip-path="url(#clip-expired-{{.Index}})" opacity="0.5">
-            <title>{{.OriginalName}}</title>
-            <image x="{{.X}}" y="{{.Y}}" width="{{.AvatarSize}}" height="{{.AvatarSize}}" xlink:href="data:{{.ImgMime}};base64,{{.ImgB64}}" />
-        </g>
-        <text x="{{.CenterX}}" y="{{.TextY}}" text-anchor="middle" font-size="{{$.FontSize}}" class="expired-text">{{.Name}}</text>
-    </g>
-{{end}}
-</g>
 {{end}}
 </svg>`
 
 const emptySVG = `<svg width="1135" height="100" xmlns="http://www.w3.org/2000/svg" style="background-color:transparent;"></svg>`
 
 // Generate generates an SVG from the given sponsors.
-func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin int, avatarsPerRow int, animationDelay float32) (string, error) {
+func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cfg *Config) (string, error) {
 	if len(activeSponsors) == 0 && len(expiredSponsors) == 0 {
 		return emptySVG, nil
 	}
 
-	fontSize := avatarSize / 8
-
-	nameLimit := avatarSize * 2 / fontSize
+	fontSize := cfg.AvatarSize / 8
+	nameLimit := cfg.AvatarSize * 2 / fontSize
 	if nameLimit < 5 {
 		nameLimit = 5
 	}
 
-	paddingX := avatarSize / 2
-	paddingY := avatarSize / 4
-	rowHeight := avatarSize + margin + fontSize + 10
-	textYMargin := avatarSize + fontSize + 10
+	paddingX := cfg.AvatarSize / 2
+	paddingY := cfg.AvatarSize / 4
+	rowHeight := cfg.AvatarSize + cfg.Margin + fontSize + 10
+	textYOffset := cfg.AvatarSize/2 + fontSize + 10
 
-	processSponsors := func(sponsors []Sponsor, startY int, active ...bool) error {
-		for i := range sponsors {
-			sponsors[i].OriginalName = sponsors[i].Name
-			if common.StringWidth(sponsors[i].Name) > nameLimit {
-				sponsors[i].Name = common.TruncateStringByWidth(sponsors[i].Name, nameLimit)
-			}
-
-			resp, err := http.Get(sponsors[i].Avatar)
-			if err != nil {
-				return err
-			}
-
-			img, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return err
-			}
-
-			_ = resp.Body.Close()
-
-			sponsors[i].Index = i
-			sponsors[i].Y = startY + (i/avatarsPerRow)*rowHeight
-			sponsors[i].X = paddingX + (i%avatarsPerRow)*(avatarSize+margin)
-			sponsors[i].CenterY = sponsors[i].Y + avatarSize/2
-			sponsors[i].CenterX = sponsors[i].X + avatarSize/2
-			sponsors[i].TextY = sponsors[i].Y + textYMargin
-			sponsors[i].Radius = avatarSize / 2
-			sponsors[i].AvatarSize = avatarSize
-			sponsors[i].ImgMime = http.DetectContentType(img)
-			sponsors[i].ImgB64 = base64.StdEncoding.EncodeToString(img)
-
-			animationIndex := float32(i)
-			if len(active) > 0 && active[0] {
-				sponsors[i].AnimationDelay = animationIndex * animationDelay
-			} else {
-				sponsors[i].AnimationDelay = animationIndex * animationDelay / 1.5
-			}
-		}
-
-		return nil
-	}
-
-	if err := processSponsors(activeSponsors, paddingY, true); err != nil {
-		return emptySVG, err
-	}
-
-	numActiveRows := (len(activeSponsors) + avatarsPerRow - 1) / avatarsPerRow
+	numActiveRows := (len(activeSponsors) + cfg.AvatarsPerRow - 1) / cfg.AvatarsPerRow
 	activeHeight := numActiveRows * rowHeight
-
 	separatorHeight := 0
 	if len(activeSponsors) > 0 && len(expiredSponsors) > 0 {
 		separatorHeight = 40
 	}
-
-	expiredStartY := paddingY + activeHeight + separatorHeight
-
-	err := processSponsors(expiredSponsors, expiredStartY)
-	if err != nil {
-		return emptySVG, err
-	}
-
-	numExpiredRows := (len(expiredSponsors) + avatarsPerRow - 1) / avatarsPerRow
+	numExpiredRows := (len(expiredSponsors) + cfg.AvatarsPerRow - 1) / cfg.AvatarsPerRow
 	expiredHeight := numExpiredRows * rowHeight
+	height := paddingY + activeHeight + separatorHeight + expiredHeight
+	width := cfg.AvatarsPerRow*(cfg.AvatarSize+cfg.Margin) - cfg.Margin + paddingX*2
+	svgCenterX := width / 2
+	svgCenterY := height / 2
 
-	height := paddingY + activeHeight + separatorHeight + expiredHeight + paddingY
+	var allSponsors []Sponsor
+	allSponsors = append(allSponsors, activeSponsors...)
+	allSponsors = append(allSponsors, expiredSponsors...)
 
-	contentWidth := 0
-	if len(activeSponsors) > 0 || len(expiredSponsors) > 0 {
-		contentWidth = avatarsPerRow*(avatarSize+margin) - margin
+	processSponsor := func(sponsor *Sponsor, index int, isActive bool, activeCount int) error {
+		sponsor.OriginalName = sponsor.Name
+		if common.StringWidth(sponsor.Name) > nameLimit {
+			sponsor.Name = common.TruncateStringByWidth(sponsor.Name, nameLimit)
+		}
+
+		resp, err := client.Get(sponsor.Avatar)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		img, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		sponsor.Index = index
+		sponsor.IsActive = isActive
+		sponsor.AvatarSize = cfg.AvatarSize
+		sponsor.Radius = cfg.AvatarSize / 2
+		sponsor.ImgMime = http.DetectContentType(img)
+		sponsor.ImgB64 = base64.StdEncoding.EncodeToString(img)
+		sponsor.TextY = textYOffset
+
+		var finalY, finalX int
+		if isActive {
+			rowIndex := index / cfg.AvatarsPerRow
+			colIndex := index % cfg.AvatarsPerRow
+			finalY = paddingY + rowIndex*rowHeight + sponsor.Radius
+			finalX = paddingX + colIndex*(cfg.AvatarSize+cfg.Margin) + sponsor.Radius
+		} else {
+			activeRows := (activeCount + cfg.AvatarsPerRow - 1) / cfg.AvatarsPerRow
+			separator := 0
+			if activeCount > 0 {
+				separator = separatorHeight
+			}
+			rowIndex := (index - activeCount) / cfg.AvatarsPerRow
+			colIndex := (index - activeCount) % cfg.AvatarsPerRow
+			finalY = paddingY + activeRows*rowHeight + separator + rowIndex*rowHeight + sponsor.Radius
+			finalX = paddingX + colIndex*(cfg.AvatarSize+cfg.Margin) + sponsor.Radius
+		}
+		sponsor.CenterY = finalY
+		sponsor.CenterX = finalX
+
+		sponsor.TranslateX = svgCenterX - sponsor.CenterX
+		sponsor.TranslateY = svgCenterY - sponsor.CenterY
+
+		animationIndex := float32(index)
+		if isActive {
+			sponsor.AnimationDelay = animationIndex * cfg.AnimationDelay
+			sponsor.Opacity = cfg.ActiveSponsorOpacity
+		} else {
+			sponsor.AnimationDelay = (animationIndex-float32(activeCount))*cfg.AnimationDelay + (float32(activeCount) * cfg.AnimationDelay)
+			if cfg.UseActiveOpacityWhenNoActive && activeCount == 0 {
+				sponsor.Opacity = cfg.ActiveSponsorOpacity
+			} else {
+				sponsor.Opacity = cfg.ExpiredSponsorOpacity
+			}
+		}
+		return nil
 	}
 
-	width := contentWidth + paddingX*2
+	for i := range allSponsors {
+		isActive := i < len(activeSponsors)
+		if err := processSponsor(&allSponsors[i], i, isActive, len(activeSponsors)); err != nil {
+			return emptySVG, err
+		}
+	}
 
 	t, err := template.New("svg").Parse(svgTPL)
 	if err != nil {
@@ -165,27 +167,26 @@ func Generate(activeSponsors, expiredSponsors []Sponsor, avatarSize int, margin 
 	}
 
 	var b bytes.Buffer
-
 	err = t.Execute(&b, struct {
 		Width           int
 		Height          int
 		FontSize        int
+		Sponsors        []Sponsor
 		ActiveSponsors  []Sponsor
 		ExpiredSponsors []Sponsor
 		LineX1          int
 		LineX2          int
 		LineY           int
-		ExpiredYOffset  int
 	}{
 		Width:           width,
 		Height:          height,
 		FontSize:        fontSize,
+		Sponsors:        allSponsors,
 		ActiveSponsors:  activeSponsors,
 		ExpiredSponsors: expiredSponsors,
 		LineX1:          paddingX,
 		LineX2:          width - paddingX,
 		LineY:           paddingY + activeHeight + separatorHeight/2,
-		ExpiredYOffset:  0,
 	})
 
 	return b.String(), err

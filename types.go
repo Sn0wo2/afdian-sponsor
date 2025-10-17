@@ -15,12 +15,14 @@ type Sponsor struct {
 	Index          int
 	CenterX        int
 	CenterY        int
-	X              int
-	Y              int
 	TextY          int
 	Radius         int
 	AvatarSize     int
 	ImgMime        string
 	ImgB64         string
 	AnimationDelay float32
+	Opacity        float32
+	IsActive       bool
+	TranslateX     int
+	TranslateY     int
 }
