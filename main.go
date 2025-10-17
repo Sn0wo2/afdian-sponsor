@@ -22,7 +22,7 @@ func main() {
 
 	cfg := GetConfig()
 
-	qs := QuerySponsor(cfg.UserID, cfg.APIToken, cfg.TotalSponsor)
+	qs := QuerySponsor(http.DefaultClient, cfg.UserID, cfg.APIToken, cfg.TotalSponsor)
 
 	var (
 		activeSponsors  []Sponsor
@@ -83,7 +83,7 @@ func main() {
 		})
 	}
 
-	svg, err := Generate(activeSponsors, expiredSponsors, cfg.AvatarSize, cfg.Margin, cfg.AvatarsPerRow, cfg.AnimationDelay)
+	svg, err := Generate(http.DefaultClient, activeSponsors, expiredSponsors, cfg)
 	if err != nil {
 		panic(err)
 	}
