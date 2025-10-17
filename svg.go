@@ -101,7 +101,9 @@ func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cf
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		img, err := io.ReadAll(resp.Body)
 		if err != nil {
