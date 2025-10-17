@@ -4,13 +4,13 @@ author: Sn0wo2
 
 inputs:
   version:
-    description: 'Release tag to fetch (e.g. v1.2.3). Default: latest'
+    description: 'Release tag to fetch (e.g. v1.2.3). If empty, resolve from action ref or fallback to latest.'
     required: false
-    default: latest
+    default: ''
   cache:
-    description: 'Enable GitHub Actions cache for the binary. Default: true'
+    description: 'Enable cache for the binary. Default: enable'
     required: false
-    default: 'true'
+    default: 'enable'
 
 runs:
   using: composite
@@ -19,9 +19,8 @@ runs:
       uses: jaxxstorm/action-install-gh-release@v1
       with:
         repo: Sn0wo2/afdian-sponsor
-        tag: ${{ inputs.version }}
-        cache: ${{ (inputs.cache == 'false') && '' || 'enable' }}
-
-    - name: Generate sponsor SVG
+        tag: ${{ inputs.version || github.action_ref || 'latest' }}
+        cache: ${{ inputs.cache == 'false' && '' || inputs.cache }}
+    - name: Run afdian-sponsor
       shell: bash
       run: afdian-sponsor
