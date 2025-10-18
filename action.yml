@@ -15,12 +15,27 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Resolve version
+      id: resolve
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+        elif [[ "${{ github.action_ref }}" =~ ^v[0-9]+$ ]]; then
+          latest=$(gh api repos/Sn0wo2/afdian-sponsor/releases \
+            --jq '.[] | select(.tag_name | startswith("${{ github.action_ref }}.")) | .tag_name' | head -n1)
+          echo "version=${latest:-latest}" >> "$GITHUB_OUTPUT"
+        else
+          echo "version=latest" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Install afdian-sponsor
       uses: jaxxstorm/action-install-gh-release@v1
       with:
         repo: Sn0wo2/afdian-sponsor
-        tag: ${{ inputs.version || github.action_ref || 'latest' }}
+        tag: ${{ steps.resolve.outputs.version }}
         cache: ${{ inputs.cache == 'false' && '' || inputs.cache }}
+
     - name: Run afdian-sponsor
       shell: bash
       run: afdian-sponsor
