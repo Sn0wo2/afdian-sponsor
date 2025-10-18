@@ -39,6 +39,13 @@ dockers_v2:
       - "{{ .Tag }}"
       - "{{ if .IsNightly }}nightly{{ end }}"
       - "{{ if not .IsNightly }}latest{{ end }}"
+    labels:
+      "org.opencontainers.image.title": "{{ .ProjectName }}"
+      "org.opencontainers.image.description": "Generate afdian sponsors svg on github action"
+      "org.opencontainers.image.created": "{{ .Date }}"
+      "org.opencontainers.image.revision": "{{ .FullCommit }}"
+      "org.opencontainers.image.version": "{{ .Version }}"
+      "org.opencontainers.image.source": "{{ .GitURL }}"
     platforms:
       - linux/amd64
       - linux/arm64
