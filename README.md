@@ -12,7 +12,7 @@
 
 ---
 
-## 👀 Example
+## 👀 Demo
 
 See **https://github.com/Sn0wo2/Sn0wo2/blob/main/.github/workflows/sponsor.yml**
 
@@ -52,6 +52,9 @@ jobs:
           AFDIAN_AVATAR_SIZE: 100
           AFDIAN_MARGIN: 15
           AFDIAN_AVATARS_PER_ROW: 15
+          AFDIAN_FONTSIZE_SCALE: 8
+          AFDIAN_PADDINGX_SCALE: 2
+          AFDIAN_PADDINGY_SCALE: 4
           AFDIAN_SORT: time
 
       - name: Upload generated SVG

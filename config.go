@@ -16,14 +16,14 @@ type Config struct {
 	AvatarSize                   int
 	Margin                       int
 	AvatarsPerRow                int
+	FontSizeScale                int
+	PaddingXScale                int
+	PaddingYScale                int
 	Sort                         string
 	AnimationDelay               float32
 	ActiveSponsorOpacity         float32
 	ExpiredSponsorOpacity        float32
 	UseActiveOpacityWhenNoActive bool
-	FontSizeScale                int
-	PaddingXScale                int
-	PaddingYScale                int
 }
 
 // GetConfig reads all the configuration from the environment variables.
@@ -46,14 +46,14 @@ func GetConfig() *Config {
 		AvatarSize:                   getEnv("AFDIAN_AVATAR_SIZE", 300, intParser, positiveIntValidator),
 		Margin:                       getEnv("AFDIAN_MARGIN", 50, strconv.Atoi, func(v int) bool { return v != 0 }),
 		AvatarsPerRow:                getEnv("AFDIAN_AVATARS_PER_ROW", 15, intParser, positiveIntValidator),
+		FontSizeScale:                getEnv("AFDIAN_FONTSIZE_SCALE", 8, strconv.Atoi, func(v int) bool { return v != 0 }),
+		PaddingXScale:                getEnv("AFDIAN_PADDINGX_SCALE", 2, strconv.Atoi, func(v int) bool { return v >= 0 }),
+		PaddingYScale:                getEnv("AFDIAN_PADDINGY_SCALE", 4, strconv.Atoi, func(v int) bool { return v >= 0 }),
 		Sort:                         getEnv("AFDIAN_SORT", "time", lowerCaseStringParser, nonEmptyValidator),
 		AnimationDelay:               getEnv("AFDIAN_ANIMATION_DELAY", 0.12, float32Parser, func(v float32) bool { return v >= 0 }),
 		ActiveSponsorOpacity:         getEnv("AFDIAN_ACTIVE_SPONSOR_OPACITY", 1.0, float32Parser, func(v float32) bool { return v >= 0 && v <= 1 }),
 		ExpiredSponsorOpacity:        getEnv("AFDIAN_EXPIRED_SPONSOR_OPACITY", 0.5, float32Parser, func(v float32) bool { return v >= 0 && v <= 1 }),
 		UseActiveOpacityWhenNoActive: getEnv("AFDIAN_USE_ACTIVE_OPACITY_WHEN_NO_ACTIVE", false, strconv.ParseBool, func(v bool) bool { return true }),
-		FontSizeScale:                getEnv("AFDIAN_FONTSIZE_SCALE", 8, strconv.Atoi, func(v int) bool { return v != 0 }),
-		PaddingXScale:                getEnv("AFDIAN_PADDINGX_SCALE", 2, strconv.Atoi, func(v int) bool { return v >= 0 }),
-		PaddingYScale:                getEnv("AFDIAN_PADDINGY_SCALE", 4, strconv.Atoi, func(v int) bool { return v >= 0 }),
 	}
 }
 
