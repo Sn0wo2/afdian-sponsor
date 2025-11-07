@@ -52,7 +52,7 @@ func GetConfig() *Config {
 		ExpiredSponsorOpacity:        getEnv("AFDIAN_EXPIRED_SPONSOR_OPACITY", 0.5, float32Parser, func(v float32) bool { return v >= 0 && v <= 1 }),
 		UseActiveOpacityWhenNoActive: getEnv("AFDIAN_USE_ACTIVE_OPACITY_WHEN_NO_ACTIVE", false, strconv.ParseBool, func(v bool) bool { return true }),
 		FontSizeScale:                getEnv("AFDIAN_FONTSIZE_SCALE", 8, strconv.Atoi, func(v int) bool { return v != 0 }),
-		PaddingXScale:                getEnv("AFDIAN_PADDINGX_SCALE", 4, strconv.Atoi, func(v int) bool { return v >= 0 }),
+		PaddingXScale:                getEnv("AFDIAN_PADDINGX_SCALE", 2, strconv.Atoi, func(v int) bool { return v >= 0 }),
 		PaddingYScale:                getEnv("AFDIAN_PADDINGY_SCALE", 4, strconv.Atoi, func(v int) bool { return v >= 0 }),
 	}
 }
