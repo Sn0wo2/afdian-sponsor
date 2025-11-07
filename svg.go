@@ -63,15 +63,20 @@ func Generate(client *http.Client, activeSponsors, expiredSponsors []Sponsor, cf
 		return emptySVG, nil
 	}
 
-	fontSize := cfg.AvatarSize / 8
-
+	fontSize := cfg.AvatarSize / cfg.FontSizeScale;
+	
 	nameLimit := cfg.AvatarSize * 2 / fontSize
 	if nameLimit < 5 {
 		nameLimit = 5
 	}
-
-	paddingX := cfg.AvatarSize / 2
-	paddingY := cfg.AvatarSize / 4
+	paddingX := 0
+	if cfg.PaddingXScale > 0 {
+		paddingX = cfg.AvatarSize / cfg.PaddingXScale
+	}
+	paddingY := 0
+	if cfg.PaddingYScale > 0 {
+		paddingY = cfg.AvatarSize / cfg.PaddingYScale
+	}
 	rowHeight := cfg.AvatarSize + cfg.Margin + fontSize + 10
 	textYOffset := cfg.AvatarSize/2 + fontSize + 10
 
