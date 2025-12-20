@@ -1,6 +1,6 @@
-# 🌩 afdian-sponsor
+# afdian-sponsor
 
-> Generate afdian sponsors svg on github action
+> Generate [ifdian(afdian)](https://ifdian.net) sponsors svg on github action
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/Sn0wo2/afdian-sponsor)](https://goreportcard.com/report/github.com/Sn0wo2/afdian-sponsor)
 [![GitHub release](https://img.shields.io/github/v/release/Sn0wo2/afdian-sponsor?color=blue)](https://github.com/Sn0wo2/afdian-sponsor/releases)
@@ -12,13 +12,19 @@
 
 ---
 
-## 👀 Demo
+不知何时**爱发电**已经把`afdian.com`的域名重定向到`ifdian.net`, 旧域名仍然可以提供服务,  
+但是因为此项目是 _github action_ 项目名将仍然保持`afdian-sponsor`  
+我们将项目中使用到的`afdian.com`的域名逐步替换到`ifdian.net`, 在描述中我们也将以**ifdian**指代之前的**afdian**
+
+---
+
+## Demo
 
 See **https://github.com/Sn0wo2/Sn0wo2/blob/main/.github/workflows/sponsor.yml**
 
 [![](https://github.com/Sn0wo2/Sn0wo2/raw/refs/heads/out/sponsor/afdian-sponsor.svg)](https://afdian.com/a/Me0wo)
 
-## 🚀 Usage
+## Example
 
 ```yaml
 name: Sponsor
@@ -33,7 +39,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run afdian-sponsor action
+      - name: Run ifdian-sponsor action
         uses: Sn0wo2/afdian-sponsor@v1
         with:
           # Optional(default values)
@@ -41,8 +47,8 @@ jobs:
           cache: true
         env:
           # Required
-          # Get User ID and API Token from https://afdian.com/dashboard/dev
-          # And add them to your github secrets(https://github.com/your-user-name/your-repo/settings/secrets/actions/new)
+          # Get User ID and API Token from https://ifdian.net/dashboard/dev
+          # And add them to your github secrets(https://github.com/$your-user-name/$your-repo/settings/secrets/actions/new)
           AFDIAN_USER_ID: ${{ secrets.AFDIAN_USER_ID }}
           AFDIAN_API_TOKEN: ${{ secrets.AFDIAN_API_TOKEN }}
 
@@ -60,13 +66,15 @@ jobs:
       - name: Upload generated SVG
         uses: actions/upload-artifact@v4
         with:
-          name: afdian-sponsor-svg
-          path: afdian-sponsor.svg
+          name: ifdian-sponsor-svg
+          path: ifdian-sponsor.svg
 ```
 
-## 🔗 Links
+--- 
 
-- [go-afdian-api](https://github.com/Sn0wo2/go-afdian-api)
+> [go-afdian-api](https://github.com/Sn0wo2/go-afdian-api)
+
+---
 
 ## License
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FSn0wo2%2Fafdian-sponsor.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FSn0wo2%2Fafdian-sponsor?ref=badge_large)
