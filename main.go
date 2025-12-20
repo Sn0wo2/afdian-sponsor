@@ -93,4 +93,6 @@ func main() {
 	}
 
 	fmt.Printf("SVG file saved to %s\n", cfg.Output)
+
+	fmt.Println("❤ Thank you for using afdian-sponsor!\nhttps://github.com/Sn0wo2/afdian-sponsor")
 }
