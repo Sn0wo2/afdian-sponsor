@@ -41,7 +41,7 @@ func run() error {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(config.Output), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(config.Output), 0o755); err != nil { //nolint:gosec // Generated SVG directories are intended to be publicly accessible.
 		return fmt.Errorf("create output directory: %w", err)
 	}
 
