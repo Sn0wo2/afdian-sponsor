@@ -32,4 +32,4 @@ go.work.sum
 .vscode/
 
 # afdian-sponsor
-/afdian-sponsor.svg
+dist/
