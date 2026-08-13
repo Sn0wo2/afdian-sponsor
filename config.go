@@ -43,7 +43,7 @@ func LoadConfig(lookup func(string) (string, bool)) (Config, error) {
 	return Config{
 		UserID:   userID,
 		APIToken: apiToken,
-		Output: envValue(lookup, "AFDIAN_OUTPUT", "./dist/afdian-sponsor.svg", func(value string) (string, error) {
+		Output: envValue(lookup, "AFDIAN_OUTPUT", "./afdian-sponsor.svg", func(value string) (string, error) {
 			return value, nil
 		}, func(value string) bool { return value != "" }),
 		TotalSponsor:  envValue(lookup, "AFDIAN_TOTAL_SPONSORS", 100, strconv.Atoi, func(value int) bool { return value > 0 }),
