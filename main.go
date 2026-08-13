@@ -8,6 +8,7 @@ import (
 
 	"github.com/Sn0wo2/afdian-sponsor/internal/xhttp"
 	"github.com/Sn0wo2/afdian-sponsor/version"
+	"github.com/Sn0wo2/go-common/helper"
 )
 
 func main() {
@@ -44,7 +45,7 @@ func run() error {
 		return fmt.Errorf("create output directory: %w", err)
 	}
 
-	if err := os.WriteFile(config.Output, []byte(svg), 0o644); err != nil { //nolint:gosec // Generated SVGs are intended to be publicly readable.
+	if err := os.WriteFile(config.Output, helper.StringToBytes(svg), 0o644); err != nil { //nolint:gosec // Generated SVGs are intended to be publicly readable.
 		return fmt.Errorf("write SVG to %s: %w", config.Output, err)
 	}
 
