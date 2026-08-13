@@ -18,12 +18,12 @@ func main() {
 }
 
 func run() error {
-	args := "tag --list v*.*.* --sort=-v:refname"
-	cmd := exec.Command("git", args) //nolint:gosec // Arguments are passed directly to Git without a shell.
+	args := []string{"tag", "--list", "v*.*.*", "--sort=-v:refname"}
+	cmd := exec.Command("git", args...)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("git %s: %w\n%s", args, err, output)
+		return fmt.Errorf("git %s: %w\n%s", strings.Join(args, " "), err, output)
 	}
 
 	lastTag := strings.TrimSpace(string(output))
@@ -55,6 +55,7 @@ func run() error {
 	}
 
 	fmt.Printf("Tagging %s...\n", newTag)
+
 	if err := executeGit("tag", newTag); err != nil {
 		return err
 	}
@@ -65,6 +66,7 @@ func run() error {
 
 	if updateMajorTag {
 		fmt.Printf("Updating major tag %s...\n", majorTag)
+
 		if err := executeGit("tag", "-f", majorTag, newTag); err != nil {
 			return err
 		}
@@ -78,6 +80,7 @@ func run() error {
 
 	if updateMajorTag {
 		fmt.Printf("Pushing %s...", majorTag)
+
 		if err := executeGit("push", "--force", "origin", majorTag); err != nil {
 			return err
 		}
