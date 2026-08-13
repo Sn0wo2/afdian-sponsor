@@ -1,13 +1,19 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"errors"
 	"strconv"
 	"strings"
 )
 
-// Config holds all the configuration for the action.
+type SortMode string
+
+const (
+	SortByTime   SortMode = "time"
+	SortByName   SortMode = "name"
+	SortByAmount SortMode = "amount"
+)
+
 type Config struct {
 	UserID                       string
 	APIToken                     string
@@ -19,89 +25,77 @@ type Config struct {
 	FontSizeScale                int
 	PaddingXScale                int
 	PaddingYScale                int
-	Sort                         string
+	Sort                         SortMode
 	AnimationDelay               float32
 	ActiveSponsorOpacity         float32
 	ExpiredSponsorOpacity        float32
 	UseActiveOpacityWhenNoActive bool
 }
 
-// GetConfig reads all the configuration from the environment variables.
-func GetConfig() *Config {
-	userID := os.Getenv("AFDIAN_USER_ID")
-	apiToken := os.Getenv("AFDIAN_API_TOKEN")
+func LoadConfig(lookup func(string) (string, bool)) (Config, error) {
+	userID, _ := lookup("AFDIAN_USER_ID")
+	apiToken, _ := lookup("AFDIAN_API_TOKEN")
 
 	if userID == "" || apiToken == "" {
-		panic("please set AFDIAN_USER_ID and AFDIAN_API_TOKEN environment variables")
+		return Config{}, errors.New("AFDIAN_USER_ID and AFDIAN_API_TOKEN must be set")
 	}
 
-	fmt.Printf("Env AFDIAN_USER_ID: %s\n", userID)
-	fmt.Printf("Env AFDIAN_API_TOKEN: %s\n", apiToken)
-
-	return &Config{
-		UserID:                       userID,
-		APIToken:                     apiToken,
-		Output:                       getEnv("AFDIAN_OUTPUT", "./afdian-sponsor.svg", stringParser, nonEmptyValidator),
-		TotalSponsor:                 getEnv("AFDIAN_TOTAL_SPONSORS", 100, intParser, positiveIntValidator),
-		AvatarSize:                   getEnv("AFDIAN_AVATAR_SIZE", 300, intParser, positiveIntValidator),
-		Margin:                       getEnv("AFDIAN_MARGIN", 50, strconv.Atoi, func(v int) bool { return v != 0 }),
-		AvatarsPerRow:                getEnv("AFDIAN_AVATARS_PER_ROW", 15, intParser, positiveIntValidator),
-		FontSizeScale:                getEnv("AFDIAN_FONTSIZE_SCALE", 8, strconv.Atoi, func(v int) bool { return v != 0 }),
-		PaddingXScale:                getEnv("AFDIAN_PADDINGX_SCALE", 2, strconv.Atoi, func(v int) bool { return v >= 0 }),
-		PaddingYScale:                getEnv("AFDIAN_PADDINGY_SCALE", 4, strconv.Atoi, func(v int) bool { return v >= 0 }),
-		Sort:                         getEnv("AFDIAN_SORT", "time", lowerCaseStringParser, nonEmptyValidator),
-		AnimationDelay:               getEnv("AFDIAN_ANIMATION_DELAY", 0.12, float32Parser, func(v float32) bool { return v >= 0 }),
-		ActiveSponsorOpacity:         getEnv("AFDIAN_ACTIVE_SPONSOR_OPACITY", 1.0, float32Parser, func(v float32) bool { return v >= 0 && v <= 1 }),
-		ExpiredSponsorOpacity:        getEnv("AFDIAN_EXPIRED_SPONSOR_OPACITY", 0.5, float32Parser, func(v float32) bool { return v >= 0 && v <= 1 }),
-		UseActiveOpacityWhenNoActive: getEnv("AFDIAN_USE_ACTIVE_OPACITY_WHEN_NO_ACTIVE", false, strconv.ParseBool, func(v bool) bool { return true }),
-	}
+	return Config{
+		UserID:   userID,
+		APIToken: apiToken,
+		Output: envValue(lookup, "AFDIAN_OUTPUT", "./dist/afdian-sponsor.svg", func(value string) (string, error) {
+			return value, nil
+		}, func(value string) bool { return value != "" }),
+		TotalSponsor:  envValue(lookup, "AFDIAN_TOTAL_SPONSORS", 100, strconv.Atoi, func(value int) bool { return value > 0 }),
+		AvatarSize:    envValue(lookup, "AFDIAN_AVATAR_SIZE", 300, strconv.Atoi, func(value int) bool { return value > 0 }),
+		Margin:        envValue(lookup, "AFDIAN_MARGIN", 50, strconv.Atoi, func(value int) bool { return value >= 0 }),
+		AvatarsPerRow: envValue(lookup, "AFDIAN_AVATARS_PER_ROW", 15, strconv.Atoi, func(value int) bool { return value > 0 }),
+		FontSizeScale: envValue(lookup, "AFDIAN_FONTSIZE_SCALE", 8, strconv.Atoi, func(value int) bool { return value > 0 }),
+		PaddingXScale: envValue(lookup, "AFDIAN_PADDINGX_SCALE", 2, strconv.Atoi, func(value int) bool { return value >= 0 }),
+		PaddingYScale: envValue(lookup, "AFDIAN_PADDINGY_SCALE", 4, strconv.Atoi, func(value int) bool { return value >= 0 }),
+		Sort:          envValue(lookup, "AFDIAN_SORT", SortByTime, parseSortMode, nil),
+		AnimationDelay: envValue(lookup, "AFDIAN_ANIMATION_DELAY", 0.12, parseFloat32, func(value float32) bool {
+			return value >= 0
+		}),
+		ActiveSponsorOpacity: envValue(lookup, "AFDIAN_ACTIVE_SPONSOR_OPACITY", 1.0, parseFloat32, func(value float32) bool {
+			return value >= 0 && value <= 1
+		}),
+		ExpiredSponsorOpacity: envValue(lookup, "AFDIAN_EXPIRED_SPONSOR_OPACITY", 0.5, parseFloat32, func(value float32) bool {
+			return value >= 0 && value <= 1
+		}),
+		UseActiveOpacityWhenNoActive: envValue(lookup, "AFDIAN_USE_ACTIVE_OPACITY_WHEN_NO_ACTIVE", false, strconv.ParseBool, nil),
+	}, nil
 }
 
-func float32Parser(s string) (float32, error) {
-	f, err := strconv.ParseFloat(s, 32)
+func parseFloat32(value string) (float32, error) {
+	parsed, err := strconv.ParseFloat(value, 32)
 	if err != nil {
 		return 0, err
 	}
 
-	return float32(f), nil
+	return float32(parsed), nil
 }
 
-func stringParser(s string) (string, error) {
-	return s, nil
+func parseSortMode(value string) (SortMode, error) {
+	mode := SortMode(strings.ToLower(value))
+	switch mode {
+	case SortByTime, SortByName, SortByAmount:
+		return mode, nil
+	default:
+		return "", errors.New("sort must be time, name, or amount")
+	}
 }
 
-func lowerCaseStringParser(s string) (string, error) {
-	return strings.ToLower(s), nil
-}
-
-func intParser(s string) (int, error) {
-	return strconv.Atoi(s)
-}
-
-func nonEmptyValidator(v string) bool {
-	return v != ""
-}
-
-func positiveIntValidator(v int) bool {
-	return v > 0
-}
-
-func getEnv[T any](key string, defaultValue T, parser func(string) (T, error), validate func(T) bool) T {
-	valueStr, ok := os.LookupEnv(key)
+func envValue[T any](lookup func(string) (string, bool), key string, fallback T, parse func(string) (T, error), valid func(T) bool) T {
+	raw, ok := lookup(key)
 	if !ok {
-		fmt.Printf("Env %s is not set, using default value: %v\n", key, defaultValue)
-
-		return defaultValue
+		return fallback
 	}
 
-	value, err := parser(valueStr)
-	if err != nil || !validate(value) {
-		fmt.Printf("Env %s value '%s' is invalid, using default value: %v\n", key, valueStr, defaultValue)
-
-		return defaultValue
+	value, err := parse(raw)
+	if err != nil || valid != nil && !valid(value) {
+		return fallback
 	}
-
-	fmt.Printf("Env %s: %v\n", key, value)
 
 	return value
 }

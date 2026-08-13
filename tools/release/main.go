@@ -4,48 +4,32 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 )
 
-func RunCMD(name string, args ...string) (string, error) {
-	cmd := exec.Command(name, args...)
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	args := "tag --list v*.*.* --sort=-v:refname"
+	cmd := exec.Command("git", args) //nolint:gosec // Arguments are passed directly to Git without a shell.
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		var exitError *exec.ExitError
-		if errors.As(err, &exitError) && strings.Contains(string(exitError.Stderr), "No names found") {
-			return "", nil
-		}
-
-		return "", fmt.Errorf("failed to run command '%s %s': %w\n%s", name, strings.Join(args, " "), err, string(output))
+		return fmt.Errorf("git %s: %w\n%s", args, err, output)
 	}
 
-	return strings.TrimSpace(string(output)), nil
-}
+	lastTag := strings.TrimSpace(string(output))
 
-func ExecuteStep(description string, command string, args ...string) {
-	fmt.Println(description)
-
-	cmd := exec.Command(command, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		panic(err)
-	}
-}
-
-func main() {
-	lastTag, err := RunCMD("git", "tag", "--list", "v*.*.*", "--sort=-v:refname")
-	if err != nil {
-		panic(err)
-	}
-
-	if i := strings.Index(lastTag, "\n"); i != -1 {
-		lastTag = lastTag[:i]
+	if first, _, found := strings.Cut(lastTag, "\n"); found {
+		lastTag = first
 	}
 
 	if lastTag == "" {
@@ -57,37 +41,62 @@ func main() {
 	fmt.Print("Enter new tag: ")
 
 	newTag, err := bufio.NewReader(os.Stdin).ReadString('\n')
-	if err != nil {
-		panic(err)
+	if err != nil && !errors.Is(err, io.EOF) {
+		return fmt.Errorf("read new tag: %w", err)
 	}
 
 	newTag = strings.TrimSpace(newTag)
-
 	if newTag == "" {
-		panic("No tag entered, aborting.")
+		return errors.New("no tag entered")
 	}
 
 	if !strings.HasPrefix(newTag, "v") {
 		newTag = "v" + newTag
 	}
 
-	ExecuteStep(fmt.Sprintf("Tagging %s...", newTag), "git", "tag", newTag)
-
-	majorVersion := ""
-
-	if parts := strings.Split(strings.TrimPrefix(newTag, "v"), "."); len(parts) > 0 {
-		majorVersion = "v" + parts[0]
+	fmt.Printf("Tagging %s...\n", newTag)
+	if err := executeGit("tag", newTag); err != nil {
+		return err
 	}
 
-	if majorVersion != "" && majorVersion != newTag {
-		ExecuteStep(fmt.Sprintf("Updating major tag %s...", majorVersion), "git", "tag", "-f", majorVersion, newTag)
+	major, _, _ := strings.Cut(strings.TrimPrefix(newTag, "v"), ".")
+	majorTag := "v" + major
+	updateMajorTag := major != "" && majorTag != newTag
+
+	if updateMajorTag {
+		fmt.Printf("Updating major tag %s...\n", majorTag)
+		if err := executeGit("tag", "-f", majorTag, newTag); err != nil {
+			return err
+		}
 	}
 
-	ExecuteStep(fmt.Sprintf("Pushing %s...", newTag), "git", "push", "origin", newTag)
+	fmt.Printf("Pushing %s...\n", newTag)
 
-	if majorVersion != "" && majorVersion != newTag {
-		ExecuteStep(fmt.Sprintf("Pushing %s...", majorVersion), "git", "push", "--force", "origin", majorVersion)
+	if err := executeGit("push", "origin", newTag); err != nil {
+		return err
+	}
+
+	if updateMajorTag {
+		fmt.Printf("Pushing %s...", majorTag)
+		if err := executeGit("push", "--force", "origin", majorTag); err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("Successfully tagged and pushed %s.\n", newTag)
+
+	return nil
+}
+
+func executeGit(args ...string) error {
+	cmd := exec.Command("git", args...) //nolint:gosec // Arguments are passed directly to Git without a shell.
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
+	}
+
+	return nil
 }

@@ -1,57 +1,102 @@
 package main
 
 import (
+	"errors"
+	"fmt"
+	"math"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/Sn0wo2/go-afdian-api"
 	"github.com/Sn0wo2/go-afdian-api/pkg/payload"
 )
 
-// QuerySponsor queries sponsors from afdian.
-func QuerySponsor(client *http.Client, userID string, apiToken string, totalSponsor int) []*payload.QuerySponsor {
-	perPage := 100
-	if totalSponsor < 100 {
-		perPage = totalSponsor
+const MaxSponsorsPerPage = 100
+
+func QuerySponsors(client *http.Client, userID, apiToken string, limit int) (SponsorGroups, error) {
+	if limit <= 0 {
+		return SponsorGroups{}, fmt.Errorf("sponsor limit must be positive: %d", limit)
 	}
 
-	sponsor, err := afdian.NewClient(&afdian.Config{
+	api := afdian.NewClient(&afdian.Config{
 		UserID:   userID,
 		APIToken: apiToken,
-	}, client).QuerySponsor(1, perPage)
+	}, client)
+	perPage := min(limit, MaxSponsorsPerPage)
+
+	firstPage, err := api.QuerySponsor(1, perPage)
 	if err != nil {
-		panic(err)
+		return SponsorGroups{}, fmt.Errorf("query sponsor page 1: %w", err)
 	}
 
-	if totalSponsor > sponsor.Data.TotalCount {
-		totalSponsor = sponsor.Data.TotalCount
+	if firstPage == nil {
+		return SponsorGroups{}, errors.New("query sponsor page 1: empty response")
 	}
 
-	// ceil total need fetch pages
-	fetchPage := (totalSponsor + perPage - 1) / perPage
+	var groups SponsorGroups
 
-	if fetchPage > sponsor.Data.TotalPage {
-		fetchPage = sponsor.Data.TotalPage
-	}
+	appendPage := func(page *payload.QuerySponsor, remaining int) int {
+		seen := 0
+		for _, entry := range page.Data.List {
+			if seen == remaining {
+				break
+			}
 
-	sponsors := make([]*payload.QuerySponsor, 0, fetchPage)
-	sponsors = append(sponsors, sponsor)
+			seen++
 
-	if fetchPage <= 1 {
-		return sponsors
-	}
+			if entry.User == nil {
+				_, _ = fmt.Fprintln(os.Stderr, "warning: skipping sponsor without user data")
 
-	// page 1 is already fetched
-	for i := 2; i <= fetchPage; i++ {
-		sponsor, err = afdian.NewClient(&afdian.Config{
-			UserID:   userID,
-			APIToken: apiToken,
-		}).QuerySponsor(i, perPage)
-		if err != nil {
-			panic(err)
+				continue
+			}
+
+			amount, err := strconv.ParseFloat(entry.AllSumAmount, 64)
+			if err != nil || math.IsNaN(amount) || math.IsInf(amount, 0) {
+				_, _ = fmt.Fprintf(os.Stderr, "warning: invalid total amount %q for sponsor %q\n", entry.AllSumAmount, entry.User.Name)
+
+				amount = 0
+			}
+
+			item := Sponsor{
+				Name:        entry.User.Name,
+				Avatar:      entry.User.Avatar,
+				TotalAmount: amount,
+				LastPaidAt:  entry.LastPayTime,
+			}
+			if entry.CurrentPlan == nil || entry.CurrentPlan.Name == "" {
+				groups.expired = append(groups.expired, item)
+			} else {
+				groups.active = append(groups.active, item)
+			}
 		}
 
-		sponsors = append(sponsors, sponsor)
+		return seen
 	}
 
-	return sponsors
+	total := min(limit, firstPage.Data.TotalCount)
+	if total <= 0 {
+		appendPage(firstPage, limit)
+
+		return groups, nil
+	}
+
+	pageCount := min((total+perPage-1)/perPage, firstPage.Data.TotalPage)
+	pageCount = max(pageCount, 1)
+	seen := appendPage(firstPage, total)
+
+	for pageNumber := 2; pageNumber <= pageCount && seen < total; pageNumber++ {
+		page, err := api.QuerySponsor(pageNumber, perPage)
+		if err != nil {
+			return SponsorGroups{}, fmt.Errorf("query sponsor page %d: %w", pageNumber, err)
+		}
+
+		if page == nil {
+			return SponsorGroups{}, fmt.Errorf("query sponsor page %d: empty response", pageNumber)
+		}
+
+		seen += appendPage(page, total-seen)
+	}
+
+	return groups, nil
 }

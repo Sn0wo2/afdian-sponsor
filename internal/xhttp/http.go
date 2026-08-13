@@ -1,92 +1,113 @@
 package xhttp
 
 import (
-	"context"
+	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
 
-type contextKey string
-
-const (
-	RetryCountKey = contextKey("retry-count")
-)
-
-type XHTTP struct {
-	MaxRetryCount uint8
-	NowRetryCount uint8
-	Cooldown      time.Duration
+type RetryAttempt struct {
+	Number   uint8
+	Limit    uint8
+	Cooldown time.Duration
 }
 
-type RetryHook func(attempt *XHTTP, err error)
+type RetryHook func(attempt RetryAttempt, err error)
 
 type Transport struct {
 	RetryCount uint8
 	Cooldown   time.Duration
 	Base       http.RoundTripper
-	OnRetry    RetryHook // Optional. Called on each retry.
+	OnRetry    RetryHook
 }
 
-// RoundTrip executes a single HTTP transaction, adding retry logic.
-func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	base := t.Base
+func (transport *Transport) RoundTrip(request *http.Request) (*http.Response, error) {
+	base := transport.Base
 	if base == nil {
 		base = http.DefaultTransport
 	}
 
-	xHTTP := &XHTTP{t.RetryCount, 0, t.Cooldown}
-
-	ctx := context.WithValue(req.Context(), RetryCountKey, xHTTP)
-	req = req.WithContext(ctx)
-
-	resp, err := base.RoundTrip(req)
+	response, err := base.RoundTrip(request)
 	if err == nil {
-		return resp, nil
+		return response, nil
 	}
 
-	for i := uint8(1); i <= t.RetryCount; i++ {
-		xHTTP.NowRetryCount = i
-		ctx := context.WithValue(ctx, RetryCountKey, xHTTP)
-		req = req.WithContext(ctx)
-
-		if t.OnRetry != nil {
-			t.OnRetry(xHTTP, err)
+	discardResponse := func(response *http.Response) {
+		if response == nil || response.Body == nil {
+			return
 		}
 
-		if t.Cooldown > 0 {
-			time.Sleep(t.Cooldown)
+		_, _ = io.Copy(io.Discard, response.Body)
+		_ = response.Body.Close()
+	}
+
+	discardResponse(response)
+
+	if contextErr := request.Context().Err(); contextErr != nil {
+		return nil, contextErr
+	}
+
+	if transport.RetryCount == 0 {
+		return nil, err
+	}
+
+	if request.Body != nil && request.GetBody == nil {
+		return nil, fmt.Errorf("request failed and its body cannot be replayed: %w", err)
+	}
+
+	for number := 1; number <= int(transport.RetryCount); number++ {
+		if transport.OnRetry != nil {
+			transport.OnRetry(RetryAttempt{
+				Number:   uint8(number),
+				Limit:    transport.RetryCount,
+				Cooldown: transport.Cooldown,
+			}, err)
 		}
 
-		resp, err = base.RoundTrip(req)
+		if transport.Cooldown > 0 {
+			timer := time.NewTimer(transport.Cooldown)
+			select {
+			case <-request.Context().Done():
+				if !timer.Stop() {
+					select {
+					case <-timer.C:
+					default:
+					}
+				}
+
+				return nil, request.Context().Err()
+			case <-timer.C:
+			}
+		} else if contextErr := request.Context().Err(); contextErr != nil {
+			return nil, contextErr
+		}
+
+		retryRequest := request.Clone(request.Context())
+		if request.Body != nil {
+			retryRequest.Body, err = request.GetBody()
+			if err != nil {
+				return nil, fmt.Errorf("recreate request body: %w", err)
+			}
+		}
+
+		response, err = base.RoundTrip(retryRequest)
 		if err == nil {
-			break
+			return response, nil
 		}
+
+		discardResponse(response)
 	}
 
-	return resp, err
+	return nil, err
 }
 
-// NewClient creates a new http.Client with our custom retry transport.
-func NewClient(retryCount uint8, cd time.Duration, hook RetryHook) *http.Client {
+func NewClient(retryCount uint8, cooldown time.Duration, hook RetryHook) *http.Client {
 	return &http.Client{
 		Transport: &Transport{
 			RetryCount: retryCount,
-			Cooldown:   cd,
+			Cooldown:   cooldown,
 			OnRetry:    hook,
 		},
 	}
-}
-
-// GetRetryCount extracts the xhttp from a request's context.
-// It returns nil if the retry count key is not found.
-func GetRetryCount(req *http.Request) *XHTTP {
-	if req == nil {
-		return nil
-	}
-
-	if xHTTP, ok := req.Context().Value(RetryCountKey).(*XHTTP); ok {
-		return xHTTP
-	}
-
-	return nil
 }

@@ -1,0 +1,58 @@
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {{.Width}} {{.Height}}">
+    <style>
+        @font-face {
+        font-family: 'Source Han Sans';
+        src: url('data:font/woff2;base64,{{.FontBase64}}') format('woff2');
+        font-style: normal;
+        font-weight: 100 900;
+        }
+        .active-text, .expired-text { font-family: 'Source Han Sans', sans-serif; }
+        .active-text { fill: #000000; font-weight: bold; }
+        .expired-text { fill: #666666; }
+        .separator { stroke: #eeeeee; }
+        @media (prefers-color-scheme: dark) {
+        .active-text, .expired-text { fill: #fff; }
+        .separator { stroke: #333; }
+        }
+        @keyframes pop-out {
+        from {
+        opacity: 0;
+        transform: translate(var(--tx, 0), var(--ty, 0)) scale(0.5);
+        }
+        to {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+        }
+        }
+        .sponsor-group {
+        animation: pop-out 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        opacity: 0;
+        }
+    </style>
+    <defs>
+        {{range .Sponsors}}
+        <clipPath id="clip-{{.Index}}">
+            <circle cx="0" cy="0" r="{{.Radius}}"/>
+        </clipPath>
+        {{end}}
+    </defs>
+    {{range .Sponsors}}
+    <g transform="translate({{.CenterX}}, {{.CenterY}})" style="opacity: {{.Opacity}};">
+        <g class="sponsor-group"
+           style="animation-delay: {{.AnimationDelay}}s; --tx: {{.TranslateX}}px; --ty: {{.TranslateY}}px;">
+            <g clip-path="url(#clip-{{.Index}})">
+                <title>{{xml .OriginalName}}</title>
+                {{if .ImageBase64}}<image x="-{{.Radius}}" y="-{{.Radius}}" width="{{.AvatarSize}}"
+                                          height="{{.AvatarSize}}"
+                                          xlink:href="data:{{.ImageMIME}};base64,{{.ImageBase64}}"/>{{end}}
+            </g>
+            <text y="{{.TextY}}" text-anchor="middle" font-size="{{$.FontSize}}"
+                  class="{{if .Active}}active-text{{else}}expired-text{{end}}">{{xml .Name}}
+            </text>
+        </g>
+    </g>
+    {{end}}
+    {{if .ShowSeparator}}
+    <line class="separator" x1="{{.LineX1}}" y1="{{.LineY}}" x2="{{.LineX2}}" y2="{{.LineY}}" stroke-width="1"/>
+    {{end}}
+</svg>
