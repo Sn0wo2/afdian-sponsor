@@ -26,9 +26,8 @@ var SourceHanSansFontBase64 = base64.StdEncoding.EncodeToString(SourceHanSansFon
 const EmptySVG = `<svg width="1135" height="100" xmlns="http://www.w3.org/2000/svg" style="background-color:transparent;"></svg>`
 
 type SVGRenderer struct {
-	client   *http.Client
-	config   Config
-	warnings io.Writer
+	client *http.Client
+	config Config
 }
 
 type SVGSponsor struct {
