@@ -53,7 +53,7 @@ jobs:
           AFDIAN_API_TOKEN: ${{ secrets.AFDIAN_API_TOKEN }}
 
           # Optional(default values)
-          AFDIAN_OUTPUT: ./
+          AFDIAN_OUTPUT: ./afdian-sponsor.svg
           AFDIAN_TOTAL_SPONSORS: 100
           AFDIAN_AVATAR_SIZE: 100
           AFDIAN_MARGIN: 15
@@ -66,8 +66,8 @@ jobs:
       - name: Upload generated SVG
         uses: actions/upload-artifact@v4
         with:
-          name: ifdian-sponsor-svg
-          path: ifdian-sponsor.svg
+          name: afdian-sponsor-svg
+          path: afdian-sponsor.svg
 ```
 
 --- 
