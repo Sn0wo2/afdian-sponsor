@@ -12,12 +12,6 @@
 
 ---
 
-不知何时**爱发电**已经把`afdian.com`的域名重定向到`ifdian.net`, 旧域名仍然可以提供服务,  
-但是因为此项目是 _github action_ 项目名将仍然保持`afdian-sponsor`  
-我们将项目中使用到的`afdian.com`的域名逐步替换到`ifdian.net`, 在描述中我们也将以**ifdian**指代之前的**afdian**
-
----
-
 ## Demo
 
 See **https://github.com/Sn0wo2/Sn0wo2/blob/main/.github/workflows/sponsor.yml**
