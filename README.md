@@ -1,6 +1,6 @@
 # afdian-sponsor
 
-> Generate [ifdian(afdian)](https://ifdian.net) sponsors svg on github action
+> Generate [afdian](https://afdian.com) sponsors svg on github action
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/Sn0wo2/afdian-sponsor)](https://goreportcard.com/report/github.com/Sn0wo2/afdian-sponsor)
 [![GitHub release](https://img.shields.io/github/v/release/Sn0wo2/afdian-sponsor?color=blue)](https://github.com/Sn0wo2/afdian-sponsor/releases)
