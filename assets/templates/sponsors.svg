@@ -1,12 +1,14 @@
-<svg xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {{.Width}} {{.Height}}">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {{.Width}} {{.Height}}">
     <style>
+        {{if .FontBase64}}
         @font-face {
-        font-family: 'Source Han Sans';
+        font-family: 'Afdian Sponsor';
         src: url('data:font/woff2;base64,{{.FontBase64}}') format('woff2');
         font-style: normal;
         font-weight: 100 900;
         }
-        .active-text, .expired-text { font-family: 'Source Han Sans', sans-serif; }
+        {{end}}
+        .active-text, .expired-text { font-family: 'Afdian Sponsor', '{{xml .FontFallback}}', sans-serif; }
         .active-text { fill: #000000; font-weight: bold; }
         .expired-text { fill: #666666; }
         .separator { stroke: #eeeeee; }
@@ -30,22 +32,18 @@
         }
     </style>
     <defs>
-        {{range .Sponsors}}
-        <clipPath id="clip-{{.Index}}">
-            <circle cx="0" cy="0" r="{{.Radius}}"/>
+        <clipPath id="avatar-clip">
+            <circle cx="0" cy="0" r="{{.AvatarRadius}}"/>
         </clipPath>
-        {{end}}
     </defs>
     {{range .Sponsors}}
-    <g transform="translate({{.CenterX}}, {{.CenterY}})" style="opacity: {{.Opacity}};">
+    <g transform="translate({{.CenterX}} {{.CenterY}})" opacity="{{.Opacity}}">
         <g class="sponsor-group"
            style="animation-delay: {{.AnimationDelay}}s; --tx: {{.TranslateX}}px; --ty: {{.TranslateY}}px;">
-            <g clip-path="url(#clip-{{.Index}})">
-                <title>{{xml .OriginalName}}</title>
-                {{if .ImageBase64}}<image x="-{{.Radius}}" y="-{{.Radius}}" width="{{.AvatarSize}}"
-                                          height="{{.AvatarSize}}"
-                                          xlink:href="data:{{.ImageMIME}};base64,{{.ImageBase64}}"/>{{end}}
-            </g>
+            <title>{{xml .OriginalName}}</title>
+            {{if .ImageBase64}}<image x="-{{.Radius}}" y="-{{.Radius}}" width="{{.AvatarSize}}"
+                                      height="{{.AvatarSize}}" clip-path="url(#avatar-clip)"
+                                      href="data:{{.ImageMIME}};base64,{{.ImageBase64}}"/>{{end}}
             <text y="{{.TextY}}" text-anchor="middle" font-size="{{$.FontSize}}"
                   class="{{if .Active}}active-text{{else}}expired-text{{end}}">{{xml .Name}}
             </text>

@@ -22,6 +22,7 @@ type Config struct {
 	AvatarSize                   int
 	Margin                       int
 	AvatarsPerRow                int
+	FontFamily                   string
 	FontSizeScale                int
 	PaddingXScale                int
 	PaddingYScale                int
@@ -50,6 +51,9 @@ func LoadConfig(lookup func(string) (string, bool)) (Config, error) {
 		AvatarSize:    envValue(lookup, "AFDIAN_AVATAR_SIZE", 300, strconv.Atoi, func(value int) bool { return value > 0 }),
 		Margin:        envValue(lookup, "AFDIAN_MARGIN", 50, strconv.Atoi, func(value int) bool { return value >= 0 }),
 		AvatarsPerRow: envValue(lookup, "AFDIAN_AVATARS_PER_ROW", 15, strconv.Atoi, func(value int) bool { return value > 0 }),
+		FontFamily: envValue(lookup, "AFDIAN_FONT_FAMILY", "Noto Sans SC:wght@100..900", func(value string) (string, error) {
+			return value, nil
+		}, func(value string) bool { return value != "" }),
 		FontSizeScale: envValue(lookup, "AFDIAN_FONTSIZE_SCALE", 8, strconv.Atoi, func(value int) bool { return value > 0 }),
 		PaddingXScale: envValue(lookup, "AFDIAN_PADDINGX_SCALE", 2, strconv.Atoi, func(value int) bool { return value >= 0 }),
 		PaddingYScale: envValue(lookup, "AFDIAN_PADDINGY_SCALE", 4, strconv.Atoi, func(value int) bool { return value >= 0 }),

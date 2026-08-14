@@ -52,6 +52,8 @@ jobs:
           AFDIAN_AVATAR_SIZE: 100
           AFDIAN_MARGIN: 15
           AFDIAN_AVATARS_PER_ROW: 15
+          # Google Fonts CSS2 family value, e.g. "Noto Sans SC:wght@100..900" (default) or "ZCOOL QingKe HuangYou"
+          AFDIAN_FONT_FAMILY: Noto Sans SC:wght@100..900
           AFDIAN_FONTSIZE_SCALE: 8
           AFDIAN_PADDINGX_SCALE: 2
           AFDIAN_PADDINGY_SCALE: 4
