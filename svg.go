@@ -30,16 +30,8 @@ import (
 var SVGTemplateSource string
 
 const (
-	EmptySVG          = `<svg xmlns="http://www.w3.org/2000/svg" width="1135" height="100"/>`
-	GoogleFontsCSSURL = "https://fonts.googleapis.com/css2"
-	UA                = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36"
-
-	MaxGoogleCSSBytes = 256 << 10
-	MaxFontBytes      = 4 << 20
-	MaxAvatarBytes    = 20 << 20
-	MaxAvatarPixels   = 16_000_000
-	JpegQuality       = 85
-	MinLossySavings   = 10
+	EmptySVG = `<svg xmlns="http://www.w3.org/2000/svg" width="1135" height="100"/>`
+	UA       = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36"
 )
 
 var GoogleFontURLPattern = regexp.MustCompile(`url\((?:'|")?(https://fonts\.gstatic\.com/[^)'"]+)`)
@@ -209,7 +201,9 @@ func (renderer SVGRenderer) Render(groups SponsorGroups) (string, error) {
 	appendSponsors(groups.expired, false, paddingY+activeHeight+separatorHeight)
 
 	seenRunes := make(map[rune]struct{})
+
 	var fontText strings.Builder
+
 	for _, sponsor := range document.Sponsors {
 		for _, character := range sponsor.Name {
 			if _, seen := seenRunes[character]; seen {
@@ -270,7 +264,7 @@ func (renderer SVGRenderer) FetchGoogleFontSubset(text string) ([]byte, error) {
 	query.Set("family", renderer.config.FontFamily)
 	query.Set("text", text)
 
-	stylesheet, err := renderer.FetchResource(GoogleFontsCSSURL+"?"+query.Encode(), MaxGoogleCSSBytes)
+	stylesheet, err := renderer.FetchResource("https://fonts.googleapis.com/css2?"+query.Encode(), 256*1024)
 	if err != nil {
 		return nil, fmt.Errorf("fetch stylesheet: %w", err)
 	}
@@ -285,10 +279,11 @@ func (renderer SVGRenderer) FetchGoogleFontSubset(text string) ([]byte, error) {
 		return nil, errors.New("stylesheet contains an invalid font URL")
 	}
 
-	font, err := renderer.FetchResource(fontURL.String(), MaxFontBytes)
+	font, err := renderer.FetchResource(fontURL.String(), 4*1024)
 	if err != nil {
 		return nil, fmt.Errorf("fetch font: %w", err)
 	}
+
 	if len(font) < 4 || string(font[:4]) != "wOF2" {
 		return nil, errors.New("font response is not WOFF2")
 	}
@@ -297,7 +292,7 @@ func (renderer SVGRenderer) FetchGoogleFontSubset(text string) ([]byte, error) {
 }
 
 func (renderer SVGRenderer) FetchAvatar(resourceURL string) ([]byte, error) {
-	avatar, err := renderer.FetchResource(resourceURL, MaxAvatarBytes)
+	avatar, err := renderer.FetchResource(resourceURL, 20*1024)
 	if err != nil {
 		return nil, err
 	}
@@ -306,51 +301,68 @@ func (renderer SVGRenderer) FetchAvatar(resourceURL string) ([]byte, error) {
 }
 
 func (renderer SVGRenderer) FetchResource(resourceURL string, maxBytes int64) ([]byte, error) {
-	request, err := http.NewRequest(http.MethodGet, resourceURL, nil)
+	resp, err := http.Get(resourceURL)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
-	request.Header.Set("User-Agent", UA)
 
-	response, err := renderer.client.Do(request)
-	if err != nil {
-		return nil, err
-	}
 	defer func() {
-		_ = response.Body.Close()
+		_ = resp.Body.Close()
 	}()
 
-	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 4<<10))
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		// 读完数据,让连接有机会被复用,但是最多4kb
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4*1024))
 
-		return nil, fmt.Errorf("unexpected HTTP status %s", response.Status)
+		return nil, fmt.Errorf("unexpected HTTP status %s", resp.Status)
 	}
-	if response.ContentLength > maxBytes {
+
+	if resp.ContentLength > maxBytes {
 		return nil, fmt.Errorf("response exceeds %d bytes", maxBytes)
 	}
 
-	data, err := io.ReadAll(io.LimitReader(response.Body, maxBytes+1))
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("read response: %w", err)
-	}
-	if len(data) == 0 {
-		return nil, errors.New("empty response")
-	}
-	if int64(len(data)) > maxBytes {
-		return nil, fmt.Errorf("response exceeds %d bytes", maxBytes)
 	}
 
 	return data, nil
 }
 
 func (renderer SVGRenderer) OptimizeAvatar(source []byte) []byte {
+	isAnimatedPNG := func(source []byte) bool {
+		if len(source) < 8 || !bytes.Equal(source[:8], []byte("\x89PNG\r\n\x1a\n")) {
+			return false
+		}
+
+		for offset := 8; offset+12 <= len(source); {
+			length := binary.BigEndian.Uint32(source[offset : offset+4])
+			if int64(length) > int64(len(source)-offset-12) {
+				return false
+			}
+
+			chunkType := string(source[offset+4 : offset+8])
+			if chunkType == "acTL" {
+				return true
+			}
+
+			if chunkType == "IEND" {
+				return false
+			}
+
+			offset += int(length) + 12
+		}
+
+		return false
+	}
+
 	mimeType := http.DetectContentType(source)
 	if mimeType != "image/jpeg" && mimeType != "image/png" || mimeType == "image/png" && isAnimatedPNG(source) {
 		return source
 	}
 
 	imageConfig, _, err := image.DecodeConfig(bytes.NewReader(source))
-	if err != nil || imageConfig.Width <= 0 || imageConfig.Height <= 0 || imageConfig.Height > MaxAvatarPixels/imageConfig.Width {
+	if err != nil || imageConfig.Width <= 0 || imageConfig.Height <= 0 || imageConfig.Height > 16_000_000/imageConfig.Width {
 		return source
 	}
 
@@ -359,7 +371,6 @@ func (renderer SVGRenderer) OptimizeAvatar(source []byte) []byte {
 		return source
 	}
 
-	optimized := decoded
 	if imageConfig.Width > renderer.config.AvatarSize || imageConfig.Height > renderer.config.AvatarSize {
 		width, height := imageConfig.Width, imageConfig.Height
 		if width >= height {
@@ -372,67 +383,42 @@ func (renderer SVGRenderer) OptimizeAvatar(source []byte) []byte {
 
 		resized := image.NewNRGBA(image.Rect(0, 0, width, height))
 		draw.CatmullRom.Scale(resized, resized.Bounds(), decoded, decoded.Bounds(), draw.Src, nil)
-		optimized = resized
+		decoded = resized
 	}
 
-	best := source
 	var pngOutput bytes.Buffer
+
 	pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
-	if err := pngEncoder.Encode(&pngOutput, optimized); err == nil && pngOutput.Len() < len(best) {
-		best = pngOutput.Bytes()
+	if err := pngEncoder.Encode(&pngOutput, decoded); err == nil && pngOutput.Len() < len(source) {
+		source = pngOutput.Bytes()
 	}
 
-	if mimeType == "image/png" && !imageIsOpaque(optimized) {
-		return best
+	imageIsOpaque := func(source image.Image) bool {
+		if opaque, ok := source.(interface{ Opaque() bool }); ok {
+			return opaque.Opaque()
+		}
+
+		bounds := source.Bounds()
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			for x := bounds.Min.X; x < bounds.Max.X; x++ {
+				_, _, _, alpha := source.At(x, y).RGBA()
+				if alpha != 0xffff {
+					return false
+				}
+			}
+		}
+
+		return true
+	}
+
+	if mimeType == "image/png" && !imageIsOpaque(decoded) {
+		return source
 	}
 
 	var jpegOutput bytes.Buffer
-	if err := jpeg.Encode(&jpegOutput, optimized, &jpeg.Options{Quality: JpegQuality}); err == nil && jpegOutput.Len() <= len(best)*(100-MinLossySavings)/100 {
-		best = jpegOutput.Bytes()
+	if err := jpeg.Encode(&jpegOutput, decoded, &jpeg.Options{Quality: 85}); err == nil && jpegOutput.Len() <= len(source)*(100-10)/100 {
+		source = jpegOutput.Bytes()
 	}
 
-	return best
-}
-
-func imageIsOpaque(source image.Image) bool {
-	if opaque, ok := source.(interface{ Opaque() bool }); ok {
-		return opaque.Opaque()
-	}
-
-	bounds := source.Bounds()
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			_, _, _, alpha := source.At(x, y).RGBA()
-			if alpha != 0xffff {
-				return false
-			}
-		}
-	}
-
-	return true
-}
-
-func isAnimatedPNG(source []byte) bool {
-	if len(source) < 8 || !bytes.Equal(source[:8], []byte("\x89PNG\r\n\x1a\n")) {
-		return false
-	}
-
-	for offset := 8; offset+12 <= len(source); {
-		length := uint64(binary.BigEndian.Uint32(source[offset : offset+4]))
-		if length > uint64(len(source)-offset-12) {
-			return false
-		}
-
-		chunkType := string(source[offset+4 : offset+8])
-		if chunkType == "acTL" {
-			return true
-		}
-		if chunkType == "IEND" {
-			return false
-		}
-
-		offset += int(length) + 12
-	}
-
-	return false
+	return source
 }
