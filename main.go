@@ -36,7 +36,7 @@ func run() error {
 
 	sponsors.SortBy(config.Sort)
 
-	svg, err := NewSVGRenderer(client, config).Render(sponsors)
+	svg, err := Render(config, sponsors)
 	if err != nil {
 		return err
 	}

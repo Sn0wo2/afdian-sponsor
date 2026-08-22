@@ -36,6 +36,10 @@ runs:
         tag: ${{ steps.resolve.outputs.version }}
         cache: ${{ inputs.cache == 'false' && '' || inputs.cache }}
 
+    - name: Fetch Google Font
+      shell: bash
+      run: cd "${GITHUB_ACTION_PATH}" && go run ./scripts/font/main.go --gha-env "${GITHUB_ENV}" --out "${RUNNER_TEMP}/afdian-sponsor-font.ttf"
+
     - name: Run afdian-sponsor
       shell: bash
       run: afdian-sponsor

@@ -1,5 +1,9 @@
-.PHONY: release
+.PHONY: release font
 
 release:
 	@echo "Running release tool..."
-	@go run ./tools/release/main.go
+	@go run ./scripts/release/main.go
+
+font:
+	@echo "Fetching Google Font at build time..."
+	@go generate ./internal/font

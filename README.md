@@ -53,7 +53,9 @@ jobs:
           AFDIAN_MARGIN: 15
           AFDIAN_AVATARS_PER_ROW: 15
           # Google Fonts CSS2 family value, e.g. "Noto Sans SC:wght@100..900" (default) or "ZCOOL QingKe HuangYou"
+          # When set, the action fetches the matching font itself and hands it to the binary via AFDIAN_FONT_FILE;
           AFDIAN_FONT_FAMILY: Noto Sans SC:wght@100..900
+          AFDIAN_FONT_FILE: ./font.ttf
           AFDIAN_FONTSIZE_SCALE: 8
           AFDIAN_PADDINGX_SCALE: 2
           AFDIAN_PADDINGY_SCALE: 4
@@ -65,6 +67,18 @@ jobs:
           name: afdian-sponsor-svg
           path: afdian-sponsor.svg
 ```
+
+## Fonts
+
+The binary never fetches fonts at runtime. The default font (`Noto Sans SC:wght@100..900`) is fetched at build time
+(`make font` / `go generate ./internal/font`, implemented by `scripts/font`) and embedded.
+`scripts/font/charset.txt` defines the character subset (the 500 most common simplified Chinese characters plus ASCII,
+digits and punctuation, from [linkary/top-used-chars](https://github.com/linkary/top-used-chars), MIT), constrained by
+Google Fonts' ~700 character subset limit.
+
+When `AFDIAN_FONT_FAMILY` is set, the action fetches the matching subset itself and passes it to the binary via
+`AFDIAN_FONT_FILE`; when unset, the binary uses its embedded font. Characters outside the subset fall back to the system
+font.
 
 --- 
 
