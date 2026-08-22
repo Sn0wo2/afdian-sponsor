@@ -3,7 +3,7 @@
         {{if .FontBase64}}
         @font-face {
         font-family: 'Afdian Sponsor';
-        src: url('data:font/woff2;base64,{{.FontBase64}}') format('woff2');
+        src: url('data:{{.FontMIME}};base64,{{.FontBase64}}');
         font-style: normal;
         font-weight: 100 900;
         }
@@ -42,7 +42,8 @@
            style="animation-delay: {{.AnimationDelay}}s; --tx: {{.TranslateX}}px; --ty: {{.TranslateY}}px;">
             <title>{{xml .OriginalName}}</title>
             {{if .ImageBase64}}<image x="-{{.Radius}}" y="-{{.Radius}}" width="{{.AvatarSize}}"
-                                      height="{{.AvatarSize}}" clip-path="url(#avatar-clip)"
+                                      height="{{.AvatarSize}}" preserveAspectRatio="xMidYMid slice"
+                                      clip-path="url(#avatar-clip)"
                                       href="data:{{.ImageMIME}};base64,{{.ImageBase64}}"/>{{end}}
             <text y="{{.TextY}}" text-anchor="middle" font-size="{{$.FontSize}}"
                   class="{{if .Active}}active-text{{else}}expired-text{{end}}">{{xml .Name}}
