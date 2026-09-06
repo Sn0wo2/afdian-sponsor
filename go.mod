@@ -4,7 +4,7 @@ go 1.26.5
 
 require (
 	github.com/Sn0wo2/go-afdian-api v1.3.3
-	github.com/Sn0wo2/go-common v0.0.0-20251204153924-3a4985f7ff6e
+	github.com/Sn0wo2/go-common v0.0.0-20260906015713-15e8c0fde4b7
 	github.com/gabriel-vasile/mimetype v1.4.15
 	github.com/mattn/go-runewidth v0.0.27
 	github.com/tdewolff/minify/v2 v2.24.17
