@@ -2,6 +2,8 @@ github.com/Sn0wo2/go-afdian-api v1.3.3 h1:el5wQzyT71lr2FNMFqsTB5drq164Xp8RY4S1ht
 github.com/Sn0wo2/go-afdian-api v1.3.3/go.mod h1:eHvHLjV9cDVxLla2IOV+DETaY8gU6XxXP+338/ySceE=
 github.com/Sn0wo2/go-common v0.0.0-20251204153924-3a4985f7ff6e h1:1ijGqY+W5axiIVPXXoI+zcqhZlBRKGWXPpQQqTRufC0=
 github.com/Sn0wo2/go-common v0.0.0-20251204153924-3a4985f7ff6e/go.mod h1:ls9dnKmbRmElVO2Hyg1waDQ07iMBFnkQVbZwjhLnxrI=
+github.com/Sn0wo2/go-common v0.0.0-20260906015713-15e8c0fde4b7 h1:UrU+nF/2Z5GqtX2NwPdNtdDKNeVEdhPYZ2Ky737UvGY=
+github.com/Sn0wo2/go-common v0.0.0-20260906015713-15e8c0fde4b7/go.mod h1:ls9dnKmbRmElVO2Hyg1waDQ07iMBFnkQVbZwjhLnxrI=
 github.com/clipperhouse/uax29/v2 v2.7.0 h1:+gs4oBZ2gPfVrKPthwbMzWZDaAFPGYK72F0NJv2v7Vk=
 github.com/clipperhouse/uax29/v2 v2.7.0/go.mod h1:EFJ2TJMRUaplDxHKj1qAEhCtQPW2tJSwu5BF98AuoVM=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
