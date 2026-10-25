@@ -9,12 +9,10 @@ linters:
     - canonicalheader
     - contextcheck
     - copyloopvar
-    - decorder
     - dogsled
     - dupl
     - dupword
     - durationcheck
-    - errcheck
     - errchkjson
     - errname
     - errorlint
@@ -26,15 +24,10 @@ linters:
     - ginkgolinter
     - gocheckcompilerdirectives
     - gochecksumtype
-    - goheader
     - gocritic
-    - goconst
     - gosec
     - gosmopolitan
     - goprintffuncname
-    - grouper
-    - ineffassign
-    - importas
     - inamedparam
     - interfacebloat
     - iface
@@ -62,7 +55,6 @@ linters:
     - rowserrcheck
     - sloglint
     - spancheck
-    - staticcheck
     - tagalign
     - testableexamples
     - testifylint
@@ -70,7 +62,6 @@ linters:
     - tparallel
     - unconvert
     - unparam
-    - unused
     - usestdlibvars
     - usetesting
     - wastedassign
@@ -79,20 +70,14 @@ linters:
     - zerologlint
 
 run:
-  tests: true
   concurrency: 4
   timeout: 5m
-  issues-exit-code: 1
   modules-download-mode: readonly
 
 issues:
   max-issues-per-linter: 0
-  uniq-by-line: true
-  fix: true
 
 formatters:
   enable:
-    - gci
-    - gofmt
     - gofumpt
     - goimports

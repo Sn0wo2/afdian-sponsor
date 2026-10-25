@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      autofix: ${{ steps.patch.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: golangci/golangci-lint-action@v9
+        id: lint
+        continue-on-error: true
+        with:
+          args: --fix
+
+      - name: Save lint fixes
+        id: patch
+        if: ${{ !cancelled() }}
+        run: |
+          if ! git diff --quiet -- '*.go'; then
+            git diff --binary -- '*.go' > "$RUNNER_TEMP/lint-fixes.patch"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git restore --worktree -- '*.go'
+          fi
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() && steps.patch.outputs.changed == 'true' }}
+        with:
+          name: lint-fixes
+          path: ${{ runner.temp }}/lint-fixes.patch
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Check lint result
+        if: ${{ !cancelled() && (steps.lint.outcome != 'success' || steps.patch.outputs.changed == 'true') }}
+        run: |
+          echo "::error::Lint failed or requires fixes. Download the lint-fixes artifact if available."
+          exit 1
+
+      - run: make test
+
+      - uses: golang/govulncheck-action@v1
+        with:
+          go-version-file: go.mod
+          cache: false
+          repo-checkout: false
+
+  autofix:
+    needs: check
+    if: >-
+      !cancelled() && needs.check.outputs.autofix == 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: lint-fixes
+          path: ${{ runner.temp }}/lint-fixes
+
+      - run: git apply "$RUNNER_TEMP/lint-fixes/lint-fixes.patch"
+
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          commit-message: "chore(autofix): formatting and lint"
+          branch: auto-fix/go-${{ github.event.pull_request.number || github.ref_name }}
+          delete-branch: true
+          title: "chore(autofix): formatting and lint"
+          body: "Automated golangci-lint fixes from CI"
+          labels: automated,go

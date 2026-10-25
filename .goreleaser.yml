@@ -1,12 +1,9 @@
 version: 2
 project_name: afdian-sponsor
 
-release:
-  prerelease: auto
-
 builds:
   - id: afdian-sponsor
-    main: ./
+    main: ./cmd
     binary: afdian-sponsor
     env:
       - CGO_ENABLED=0
@@ -17,67 +14,73 @@ builds:
     goarch:
       - amd64
       - arm64
+    goamd64:
+      - v1
+      - v3
     flags:
       - -mod=readonly
       - -trimpath
-    asmflags:
-      - -trimpath
-    gcflags:
-      - all=-d=ssa/check_bce/debug=0
     ldflags:
       - -s -w -buildid=
-      - -extldflags=-static
-      - -linkmode internal
       - -X github.com/Sn0wo2/afdian-sponsor/version.version={{.Version}}
       - -X github.com/Sn0wo2/afdian-sponsor/version.commit={{.Commit}}
       - -X github.com/Sn0wo2/afdian-sponsor/version.date={{.Date}}
 
 dockers_v2:
   - images:
-      - "ghcr.io/sn0wo2/{{ .ProjectName }}"
+      - ghcr.io/sn0wo2/{{ .ProjectName }}
     tags:
-      - "{{ .Tag }}"
-      - "{{ if .IsNightly }}nightly{{ end }}"
-      - "{{ if not .IsNightly }}latest{{ end }}"
+      - "v{{ .Version }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+      - "beta-latest"
+    flags:
+      - '{{ if eq (index .Env "GITHUB_ACTIONS") "true" }}--cache-from=type=gha,version=2,scope={{ .ProjectName }}{{ end }}'
+      - '{{ if eq (index .Env "GITHUB_ACTIONS") "true" }}--cache-to=type=gha,version=2,mode=max,scope={{ .ProjectName }},ignore-error=true{{ end }}'
     labels:
-      "org.opencontainers.image.title": "{{ .ProjectName }}"
-      "org.opencontainers.image.description": "Generate afdian sponsors svg on github action"
-      "org.opencontainers.image.created": "{{ .Date }}"
-      "org.opencontainers.image.revision": "{{ .FullCommit }}"
-      "org.opencontainers.image.version": "{{ .Version }}"
-      "org.opencontainers.image.source": "{{ .GitURL }}"
-    platforms:
-      - linux/amd64
-      - linux/arm64
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.source: "https://github.com/Sn0wo2/{{ .ProjectName }}"
+      org.opencontainers.image.url: "https://github.com/Sn0wo2/{{ .ProjectName }}"
+      org.opencontainers.image.description: "Generate afdian sponsors svg on github action"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .Commit }}"
+      org.opencontainers.image.created: "{{ .Date }}"
+
+snapshot:
+  version_template: "{{ .Version }}-next"
 
 changelog:
-  disable: false
   use: github
-  sort: asc
   groups:
-    - title: "🚀 Features"
+    - title: 「Features」
       regexp: "^.*feat(?:\\([^)]+\\))?:+.*$"
-      order: 0
-    - title: "🐛 Bug Fixes"
+    - title: 「Bug Fixes」
       regexp: "^.*fix(?:\\([^)]+\\))?:+.*$"
       order: 1
-    - title: "⚡️ Performance Improvements"
+    - title: 「Performance Improvements」
       regexp: "^.*perf(?:\\([^)]+\\))?:+.*$"
       order: 2
-    - title: "📝 Documentation"
+    - title: 「Documentation」
       regexp: "^.*docs(?:\\([^)]+\\))?:+.*$"
       order: 3
-    - title: "🔧 Maintenance & Chores"
+    - title: 「Maintenance & Chores」
       regexp: "^.*chore(?:\\([^)]+\\))?:+.*$"
       order: 4
-    - title: "♻️ Code Refactoring"
+    - title: 「Code Refactoring」
       regexp: "^.*refactor(?:\\([^)]+\\))?:+.*$"
       order: 5
-    - title: "🧪 Tests"
+    - title: 「Tests」
       regexp: "^.*test(?:\\([^)]+\\))?:+.*$"
       order: 6
-    - title: "📦 Dependency Updates"
+    - title: 「Dependency Updates」
       regexp: "^.*deps(?:\\([^)]+\\))?:+.*$"
       order: 7
-    - title: "📍 Others"
+    - title: 「Others」
       order: 999
+
+release:
+  prerelease: auto
+  replace_existing_artifacts: true
+  header: |
+    {{ if .Prerelease }}
+    > ⚠️ **WARNING: This is a pre-release version and is not recommended for production use.**
+    {{ end }}

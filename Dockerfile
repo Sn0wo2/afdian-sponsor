@@ -1,13 +1,10 @@
-FROM alpine:latest
+FROM --platform=$BUILDPLATFORM alpine AS certs
+RUN apk add --no-cache ca-certificates
+
+FROM scratch
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 ARG TARGETPLATFORM
-
-RUN mkdir -p /opt/afdian-sponsor
-
-WORKDIR /opt/afdian-sponsor
-
-COPY $TARGETPLATFORM/afdian-sponsor /opt/afdian-sponsor/afdian-sponsor
-
-RUN chmod +x /opt/afdian-sponsor/afdian-sponsor
-
-ENTRYPOINT ["/opt/afdian-sponsor/afdian-sponsor"]
+COPY $TARGETPLATFORM/afdian-sponsor /app/afdian-sponsor
+WORKDIR /app
+ENTRYPOINT ["/app/afdian-sponsor"]
