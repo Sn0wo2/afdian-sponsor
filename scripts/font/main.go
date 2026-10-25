@@ -35,10 +35,12 @@ func run() error {
 	family := flag.String("family", envOr("AFDIAN_FONT_FAMILY", defaultFamily), "Google Fonts CSS2 family value")
 	out := flag.String("out", "", "output font file path (default: <repo root>/internal/font/font.ttf)")
 	ghaEnv := flag.String("gha-env", "", "GitHub Actions env file to append AFDIAN_FONT_FILE to; requires AFDIAN_FONT_FAMILY to be set, otherwise exits without fetching")
+
 	flag.Parse()
 
 	if *ghaEnv != "" && os.Getenv("AFDIAN_FONT_FAMILY") == "" {
 		fmt.Println("AFDIAN_FONT_FAMILY is not set; the font embedded in the binary at build time will be used")
+
 		return nil
 	}
 
@@ -84,11 +86,11 @@ func run() error {
 		return fmt.Errorf("font is %d bytes, larger than the %d byte limit; the charset may exceed Google Fonts' subset limit", len(font), maxFontBytes)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil { //nolint:gosec // Generated font directories are intended to be publicly accessible.
 		return fmt.Errorf("create output directory: %w", err)
 	}
 
-	if err := os.WriteFile(*out, font, 0o644); err != nil {
+	if err := os.WriteFile(*out, font, 0o644); err != nil { //nolint:gosec // The generated font file is intended to be publicly readable.
 		return fmt.Errorf("write font to %s: %w", *out, err)
 	}
 
@@ -100,7 +102,7 @@ func run() error {
 			return fmt.Errorf("resolve font path: %w", err)
 		}
 
-		envFile, err := os.OpenFile(*ghaEnv, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		envFile, err := os.OpenFile(*ghaEnv, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644) //nolint:gosec // The GitHub Actions env file is managed by the runner.
 		if err != nil {
 			return fmt.Errorf("open GitHub Actions env file: %w", err)
 		}
@@ -118,7 +120,7 @@ func run() error {
 }
 
 func fetchResource(resourceURL string) ([]byte, error) {
-	resp, err := http.Get(resourceURL)
+	resp, err := http.Get(resourceURL) //nolint:gosec // The URL is built from fixed Google Fonts endpoints or validated against fonts.gstatic.com.
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}

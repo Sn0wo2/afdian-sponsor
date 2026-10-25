@@ -77,6 +77,149 @@ type SVGSponsor struct {
 	TranslateY     int
 }
 
+func isAnimatedPNG(source []byte) bool {
+	if len(source) < 8 || !bytes.Equal(source[:8], []byte("\x89PNG\r\n\x1a\n")) {
+		return false
+	}
+
+	for offset := 8; offset+12 <= len(source); {
+		length := binary.BigEndian.Uint32(source[offset : offset+4])
+		if int64(length) > int64(len(source)-offset-12) {
+			return false
+		}
+
+		chunkType := string(source[offset+4 : offset+8])
+		if chunkType == "acTL" {
+			return true
+		}
+
+		if chunkType == "IEND" {
+			return false
+		}
+
+		offset += int(length) + 12
+	}
+
+	return false
+}
+
+func imageIsOpaque(source image.Image) bool {
+	if opaque, ok := source.(interface{ Opaque() bool }); ok {
+		return opaque.Opaque()
+	}
+
+	bounds := source.Bounds()
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			_, _, _, alpha := source.At(x, y).RGBA()
+			if alpha != 0xffff {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func fetchAvatar(sponsor Sponsor) []byte {
+	resp, err := http.Get(sponsor.Avatar)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: create request: %v\n", sponsor.Name, err)
+
+		return nil
+	}
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		// 读完数据,让连接有机会被复用,但是最多4kb
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4*1024))
+
+		fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: unexpected HTTP status %s\n", sponsor.Name, resp.Status)
+
+		return nil
+	}
+
+	if resp.ContentLength > MaxAvatarBytes {
+		fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: response exceeds %d bytes\n", sponsor.Name, MaxAvatarBytes)
+
+		return nil
+	}
+
+	data, readErr := io.ReadAll(io.LimitReader(resp.Body, MaxAvatarBytes+1))
+	if readErr != nil {
+		fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: read response: %v\n", sponsor.Name, readErr)
+
+		return nil
+	}
+
+	// ContentLength 为 -1 时上面的检查不生效,读满说明超限,跳过而不是嵌入截断的图片
+	if len(data) > MaxAvatarBytes {
+		fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: response exceeds %d bytes\n", sponsor.Name, MaxAvatarBytes)
+
+		return nil
+	}
+
+	return data
+}
+
+func processAvatar(avatar []byte, avatarSize int) []byte {
+	mimeType := http.DetectContentType(avatar)
+	if mimeType != "image/jpeg" && mimeType != "image/png" {
+		return avatar
+	}
+
+	if mimeType == "image/png" && isAnimatedPNG(avatar) {
+		return avatar
+	}
+
+	imageConfig, _, err := image.DecodeConfig(bytes.NewReader(avatar))
+	if err != nil || imageConfig.Width <= 0 || imageConfig.Height <= 0 || imageConfig.Height > 16_000_000/imageConfig.Width {
+		return avatar
+	}
+
+	decoded, _, err := image.Decode(bytes.NewReader(avatar))
+	if err != nil {
+		return avatar
+	}
+
+	if imageConfig.Width > avatarSize || imageConfig.Height > avatarSize {
+		var width, height int
+		if imageConfig.Width >= imageConfig.Height {
+			width = max(avatarSize, imageConfig.Width*avatarSize/imageConfig.Height)
+			height = avatarSize
+		} else {
+			width = avatarSize
+			height = max(avatarSize, imageConfig.Height*avatarSize/imageConfig.Width)
+		}
+
+		resized := image.NewNRGBA(image.Rect(0, 0, width, height))
+		draw.CatmullRom.Scale(resized, resized.Bounds(), decoded, decoded.Bounds(), draw.Src, nil)
+
+		cropX := (width - avatarSize) / 2
+		cropY := (height - avatarSize) / 2
+		decoded = resized.SubImage(image.Rect(cropX, cropY, cropX+avatarSize, cropY+avatarSize))
+	}
+
+	var pngOutput bytes.Buffer
+
+	pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
+	if err := pngEncoder.Encode(&pngOutput, decoded); err == nil && pngOutput.Len() < len(avatar) {
+		avatar = pngOutput.Bytes()
+	}
+
+	if mimeType != "image/png" || imageIsOpaque(decoded) {
+		var jpegOutput bytes.Buffer
+		if err := jpeg.Encode(&jpegOutput, decoded, &jpeg.Options{Quality: 85}); err == nil && jpegOutput.Len() <= len(avatar)*(100-10)/100 {
+			avatar = jpegOutput.Bytes()
+		}
+	}
+
+	return avatar
+}
+
 func Render(config Config, groups SponsorGroups) (string, error) {
 	if len(groups.active) == 0 && len(groups.expired) == 0 {
 		return EmptySVG, nil
@@ -140,116 +283,11 @@ func Render(config Config, groups SponsorGroups) (string, error) {
 		LineY:         paddingY + activeHeight + separatorHeight/2,
 	}
 
-	isAnimatedPNG := func(source []byte) bool {
-		if len(source) < 8 || !bytes.Equal(source[:8], []byte("\x89PNG\r\n\x1a\n")) {
-			return false
-		}
-
-		for offset := 8; offset+12 <= len(source); {
-			length := binary.BigEndian.Uint32(source[offset : offset+4])
-			if int64(length) > int64(len(source)-offset-12) {
-				return false
-			}
-
-			chunkType := string(source[offset+4 : offset+8])
-			if chunkType == "acTL" {
-				return true
-			}
-
-			if chunkType == "IEND" {
-				return false
-			}
-
-			offset += int(length) + 12
-		}
-
-		return false
-	}
-
-	imageIsOpaque := func(source image.Image) bool {
-		if opaque, ok := source.(interface{ Opaque() bool }); ok {
-			return opaque.Opaque()
-		}
-
-		bounds := source.Bounds()
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			for x := bounds.Min.X; x < bounds.Max.X; x++ {
-				_, _, _, alpha := source.At(x, y).RGBA()
-				if alpha != 0xffff {
-					return false
-				}
-			}
-		}
-
-		return true
-	}
-
 	appendSponsors := func(sponsors []Sponsor, active bool, yOffset int) {
 		for groupIndex, sponsor := range sponsors {
-			var avatar []byte
-
-			resp, err := http.Get(sponsor.Avatar)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: create request: %v\n", sponsor.Name, err)
-			} else {
-				if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-					// 读完数据,让连接有机会被复用,但是最多4kb
-					_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4*1024))
-
-					fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: unexpected HTTP status %s\n", sponsor.Name, resp.Status)
-				} else if resp.ContentLength > MaxAvatarBytes {
-					fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: response exceeds %d bytes\n", sponsor.Name, MaxAvatarBytes)
-				} else if data, readErr := io.ReadAll(io.LimitReader(resp.Body, MaxAvatarBytes+1)); readErr != nil {
-					fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: read response: %v\n", sponsor.Name, readErr)
-				} else if len(data) > MaxAvatarBytes {
-					// ContentLength 为 -1 时上面的检查不生效,读满说明超限,跳过而不是嵌入截断的图片
-					fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: response exceeds %d bytes\n", sponsor.Name, MaxAvatarBytes)
-				} else {
-					avatar = data
-
-					mimeType := http.DetectContentType(data)
-					if mimeType == "image/jpeg" || mimeType == "image/png" {
-						if !(mimeType == "image/png" && isAnimatedPNG(data)) {
-							if imageConfig, _, err := image.DecodeConfig(bytes.NewReader(data)); err == nil && imageConfig.Width > 0 && imageConfig.Height > 0 && imageConfig.Height <= 16_000_000/imageConfig.Width {
-								if decoded, _, err := image.Decode(bytes.NewReader(data)); err == nil {
-									if imageConfig.Width > config.AvatarSize || imageConfig.Height > config.AvatarSize {
-										var width, height int
-										if imageConfig.Width >= imageConfig.Height {
-											width = max(config.AvatarSize, imageConfig.Width*config.AvatarSize/imageConfig.Height)
-											height = config.AvatarSize
-										} else {
-											width = config.AvatarSize
-											height = max(config.AvatarSize, imageConfig.Height*config.AvatarSize/imageConfig.Width)
-										}
-
-										resized := image.NewNRGBA(image.Rect(0, 0, width, height))
-										draw.CatmullRom.Scale(resized, resized.Bounds(), decoded, decoded.Bounds(), draw.Src, nil)
-
-										cropX := (width - config.AvatarSize) / 2
-										cropY := (height - config.AvatarSize) / 2
-										decoded = resized.SubImage(image.Rect(cropX, cropY, cropX+config.AvatarSize, cropY+config.AvatarSize))
-									}
-
-									var pngOutput bytes.Buffer
-
-									pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
-									if err := pngEncoder.Encode(&pngOutput, decoded); err == nil && pngOutput.Len() < len(avatar) {
-										avatar = pngOutput.Bytes()
-									}
-
-									if !(mimeType == "image/png" && !imageIsOpaque(decoded)) {
-										var jpegOutput bytes.Buffer
-										if err := jpeg.Encode(&jpegOutput, decoded, &jpeg.Options{Quality: 85}); err == nil && jpegOutput.Len() <= len(avatar)*(100-10)/100 {
-											avatar = jpegOutput.Bytes()
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-
-				_ = resp.Body.Close()
+			avatar := fetchAvatar(sponsor)
+			if len(avatar) > 0 {
+				avatar = processAvatar(avatar, config.AvatarSize)
 			}
 
 			name := sponsor.Name
