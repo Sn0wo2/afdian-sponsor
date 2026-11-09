@@ -8,7 +8,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.16
 	github.com/mattn/go-runewidth v0.0.31
 	github.com/tdewolff/minify/v2 v2.24.25
-	golang.org/x/image v0.47.0
+	golang.org/x/image v0.48.0
 )
 
 require (
