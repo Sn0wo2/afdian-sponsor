@@ -1,6 +1,6 @@
 BINARY_NAME ?= afdian-sponsor
 
-.PHONY: lint lint-fix test build clean security ci release dry-release font
+.PHONY: lint lint-fix test build clean security ci release dry-release release-tag font
 
 lint:
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 run
@@ -27,6 +27,9 @@ release:
 
 dry-release:
 	goreleaser release --snapshot --clean
+
+release-tag:
+	node scripts/release-tag.js $(TAG)
 
 font:
 	@echo "Fetching Google Font at build time..."
