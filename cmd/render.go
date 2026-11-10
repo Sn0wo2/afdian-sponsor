@@ -31,9 +31,7 @@ var SVGTemplateSource string
 //go:embed assets/templates/empty.svg
 var EmptySVG string
 
-const (
-	MaxAvatarBytes = 10 * 1024 * 1024
-)
+const MaxAvatarBytes = 10 * 1024 * 1024
 
 var SponsorsSVGTemplate = template.Must(template.New("svg").Funcs(template.FuncMap{
 	"xml": func(value string) string {
@@ -77,50 +75,6 @@ type SVGSponsor struct {
 	TranslateY     int
 }
 
-func isAnimatedPNG(source []byte) bool {
-	if len(source) < 8 || !bytes.Equal(source[:8], []byte("\x89PNG\r\n\x1a\n")) {
-		return false
-	}
-
-	for offset := 8; offset+12 <= len(source); {
-		length := binary.BigEndian.Uint32(source[offset : offset+4])
-		if int64(length) > int64(len(source)-offset-12) {
-			return false
-		}
-
-		chunkType := string(source[offset+4 : offset+8])
-		if chunkType == "acTL" {
-			return true
-		}
-
-		if chunkType == "IEND" {
-			return false
-		}
-
-		offset += int(length) + 12
-	}
-
-	return false
-}
-
-func imageIsOpaque(source image.Image) bool {
-	if opaque, ok := source.(interface{ Opaque() bool }); ok {
-		return opaque.Opaque()
-	}
-
-	bounds := source.Bounds()
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			_, _, _, alpha := source.At(x, y).RGBA()
-			if alpha != 0xffff {
-				return false
-			}
-		}
-	}
-
-	return true
-}
-
 func fetchAvatar(sponsor Sponsor) []byte {
 	resp, err := http.Get(sponsor.Avatar)
 	if err != nil {
@@ -134,7 +88,6 @@ func fetchAvatar(sponsor Sponsor) []byte {
 	}()
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		// 读完数据,让连接有机会被复用,但是最多4kb
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4*1024))
 
 		fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: unexpected HTTP status %s\n", sponsor.Name, resp.Status)
@@ -155,7 +108,6 @@ func fetchAvatar(sponsor Sponsor) []byte {
 		return nil
 	}
 
-	// ContentLength 为 -1 时上面的检查不生效,读满说明超限,跳过而不是嵌入截断的图片
 	if len(data) > MaxAvatarBytes {
 		fmt.Fprintf(os.Stderr, "warning: skipping avatar for sponsor %q: response exceeds %d bytes\n", sponsor.Name, MaxAvatarBytes)
 
@@ -171,8 +123,31 @@ func processAvatar(avatar []byte, avatarSize int) []byte {
 		return avatar
 	}
 
-	if mimeType == "image/png" && isAnimatedPNG(avatar) {
-		return avatar
+	if mimeType == "image/png" {
+		animated := false
+
+	scan:
+		for offset := 8; offset+12 <= len(avatar); {
+			length := binary.BigEndian.Uint32(avatar[offset : offset+4])
+			if int64(length) > int64(len(avatar)-offset-12) {
+				break
+			}
+
+			switch string(avatar[offset+4 : offset+8]) {
+			case "acTL":
+				animated = true
+
+				break scan
+			case "IEND":
+				break scan
+			default:
+				offset += int(length) + 12
+			}
+		}
+
+		if animated {
+			return avatar
+		}
 	}
 
 	imageConfig, _, err := image.DecodeConfig(bytes.NewReader(avatar))
@@ -210,7 +185,24 @@ func processAvatar(avatar []byte, avatarSize int) []byte {
 		avatar = pngOutput.Bytes()
 	}
 
-	if mimeType != "image/png" || imageIsOpaque(decoded) {
+	opaque := true
+	if source, ok := decoded.(interface{ Opaque() bool }); ok {
+		opaque = source.Opaque()
+	} else {
+		bounds := decoded.Bounds()
+		for y := bounds.Min.Y; y < bounds.Max.Y && opaque; y++ {
+			for x := bounds.Min.X; x < bounds.Max.X; x++ {
+				_, _, _, alpha := decoded.At(x, y).RGBA()
+				if alpha != 0xffff {
+					opaque = false
+
+					break
+				}
+			}
+		}
+	}
+
+	if mimeType != "image/png" || opaque {
 		var jpegOutput bytes.Buffer
 		if err := jpeg.Encode(&jpegOutput, decoded, &jpeg.Options{Quality: 85}); err == nil && jpegOutput.Len() <= len(avatar)*(100-10)/100 {
 			avatar = jpegOutput.Bytes()
@@ -306,8 +298,6 @@ func Render(config Config, groups SponsorGroups) (string, error) {
 				opacity = config.ActiveSponsorOpacity
 			}
 
-			index := len(document.Sponsors)
-
 			renderSponsor := SVGSponsor{
 				Name:           name,
 				OriginalName:   sponsor.Name,
@@ -316,7 +306,7 @@ func Render(config Config, groups SponsorGroups) (string, error) {
 				TextY:          textY,
 				Radius:         radius,
 				AvatarSize:     config.AvatarSize,
-				AnimationDelay: float32(index) * config.AnimationDelay,
+				AnimationDelay: float32(len(document.Sponsors)) * config.AnimationDelay,
 				Opacity:        opacity,
 				Active:         active,
 				TranslateX:     centerX - x,

@@ -1,4 +1,3 @@
-// Package font go generate ./internal/font
 package font
 
 import _ "embed"

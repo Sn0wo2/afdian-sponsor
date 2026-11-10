@@ -17,12 +17,7 @@ import (
 //go:embed charset.txt
 var charset string
 
-const (
-	defaultFamily = "Noto Sans SC:wght@100..900"
-	maxFontBytes  = 5 * 1024 * 1024
-)
-
-var GoogleFontURLPattern = regexp.MustCompile(`url\((?:'|")?(https://fonts\.gstatic\.com/[^)'"]+)`)
+const maxFontBytes = 5 * 1024 * 1024
 
 func main() {
 	if err := run(); err != nil {
@@ -32,29 +27,47 @@ func main() {
 }
 
 func run() error {
-	family := flag.String("family", envOr("AFDIAN_FONT_FAMILY", defaultFamily), "Google Fonts CSS2 family value")
+	defaultFamily := "Noto Sans SC:wght@100..900"
+	if value := os.Getenv("AFDIAN_FONT_FAMILY"); strings.TrimSpace(value) != "" {
+		defaultFamily = value
+	}
+
+	family := flag.String("family", defaultFamily, "Google Fonts CSS2 family value")
 	out := flag.String("out", "", "output font file path (default: <repo root>/internal/font/font.ttf)")
 	ghaEnv := flag.String("gha-env", "", "GitHub Actions env file to append AFDIAN_FONT_FILE to; requires AFDIAN_FONT_FAMILY to be set, otherwise exits without fetching")
 
 	flag.Parse()
 
-	if *ghaEnv != "" && os.Getenv("AFDIAN_FONT_FAMILY") == "" {
+	if *ghaEnv != "" && strings.TrimSpace(os.Getenv("AFDIAN_FONT_FAMILY")) == "" {
 		fmt.Println("AFDIAN_FONT_FAMILY is not set; the font embedded in the binary at build time will be used")
 
 		return nil
 	}
 
 	if *out == "" {
-		root, err := findRepoRoot()
+		directory, err := os.Getwd()
 		if err != nil {
 			return err
 		}
 
-		*out = filepath.Join(root, "internal", "font", "font.ttf")
+		for {
+			if _, err := os.Stat(filepath.Join(directory, "go.mod")); err == nil {
+				*out = filepath.Join(directory, "internal", "font", "font.ttf")
+
+				break
+			}
+
+			parent := filepath.Dir(directory)
+			if parent == directory {
+				return errors.New("could not find go.mod in any parent directory")
+			}
+
+			directory = parent
+		}
 	}
 
-	if len([]rune(charset)) > 700 {
-		fmt.Fprintf(os.Stderr, "warning: charset has %d characters, Google Fonts may serve the full font instead of a subset\n", len([]rune(charset)))
+	if length := len([]rune(charset)); length > 700 {
+		fmt.Fprintf(os.Stderr, "warning: charset has %d characters, Google Fonts may serve the full font instead of a subset\n", length)
 	}
 
 	query := url.Values{}
@@ -67,7 +80,7 @@ func run() error {
 		return fmt.Errorf("fetch stylesheet: %w", err)
 	}
 
-	match := GoogleFontURLPattern.FindSubmatch(stylesheet)
+	match := regexp.MustCompile(`url\((?:'|")?(https://fonts\.gstatic\.com/[^)'"]+)`).FindSubmatch(stylesheet)
 	if len(match) != 2 {
 		return errors.New("stylesheet does not contain a font URL")
 	}
@@ -87,7 +100,7 @@ func run() error {
 	}
 
 	if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil { //nolint:gosec // Generated font directories are intended to be publicly accessible.
-		return fmt.Errorf("create output directory: %w", err)
+		return fmt.Errorf("create font directory: %w", err)
 	}
 
 	if err := os.WriteFile(*out, font, 0o644); err != nil { //nolint:gosec // The generated font file is intended to be publicly readable.
@@ -141,32 +154,4 @@ func fetchResource(resourceURL string) ([]byte, error) {
 	}
 
 	return data, nil
-}
-
-func findRepoRoot() (string, error) {
-	directory, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(directory, "go.mod")); err == nil {
-			return directory, nil
-		}
-
-		parent := filepath.Dir(directory)
-		if parent == directory {
-			return "", errors.New("could not find go.mod in any parent directory")
-		}
-
-		directory = parent
-	}
-}
-
-func envOr(key, fallback string) string {
-	if value := os.Getenv(key); strings.TrimSpace(value) != "" {
-		return value
-	}
-
-	return fallback
 }
