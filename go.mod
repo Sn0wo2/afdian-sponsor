@@ -1,9 +1,10 @@
 module github.com/Sn0wo2/afdian-sponsor
 
-go 1.26.5
+go 1.27
 
 require (
 	github.com/Sn0wo2/go-afdian-api v1.3.3
+	github.com/Sn0wo2/go-afdian-api/v2 v2.0.1
 	github.com/Sn0wo2/go-common v0.0.0-20260906015713-15e8c0fde4b7
 	github.com/gabriel-vasile/mimetype v1.4.16
 	github.com/mattn/go-runewidth v0.0.31
