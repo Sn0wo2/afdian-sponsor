@@ -1,18 +1,15 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"net/http"
 	"os"
 	"strconv"
 
-	"github.com/Sn0wo2/go-afdian-api"
-	"github.com/Sn0wo2/go-afdian-api/pkg/payload"
+	"github.com/Sn0wo2/go-afdian-api/v2"
+	"github.com/Sn0wo2/go-afdian-api/v2/pkg/payload"
 )
-
-const MaxSponsorsPerPage = 100
 
 func QuerySponsors(client *http.Client, userID, apiToken string, limit int) (SponsorGroups, error) {
 	if limit <= 0 {
@@ -23,28 +20,19 @@ func QuerySponsors(client *http.Client, userID, apiToken string, limit int) (Spo
 		UserID:   userID,
 		APIToken: apiToken,
 	}, client)
-	perPage := min(limit, MaxSponsorsPerPage)
+	perPage := min(limit, 100)
 
 	firstPage, err := api.QuerySponsor(1, perPage)
 	if err != nil {
 		return SponsorGroups{}, fmt.Errorf("query sponsor page 1: %w", err)
 	}
 
-	if firstPage == nil {
-		return SponsorGroups{}, errors.New("query sponsor page 1: empty response")
-	}
-
 	var groups SponsorGroups
 
 	appendPage := func(page *payload.QuerySponsor, remaining int) int {
-		seen := 0
-		for _, entry := range page.Data.List {
-			if seen == remaining {
-				break
-			}
+		entries := page.Data.List[:min(len(page.Data.List), remaining)]
 
-			seen++
-
+		for _, entry := range entries {
 			if entry.User == nil {
 				_, _ = fmt.Fprintln(os.Stderr, "warning: skipping sponsor without user data")
 
@@ -71,7 +59,7 @@ func QuerySponsors(client *http.Client, userID, apiToken string, limit int) (Spo
 			}
 		}
 
-		return seen
+		return len(entries)
 	}
 
 	total := min(limit, firstPage.Data.TotalCount)
@@ -81,18 +69,13 @@ func QuerySponsors(client *http.Client, userID, apiToken string, limit int) (Spo
 		return groups, nil
 	}
 
-	pageCount := min((total+perPage-1)/perPage, firstPage.Data.TotalPage)
-	pageCount = max(pageCount, 1)
+	pageCount := max(min((total+perPage-1)/perPage, firstPage.Data.TotalPage), 1)
 	seen := appendPage(firstPage, total)
 
 	for pageNumber := 2; pageNumber <= pageCount && seen < total; pageNumber++ {
 		page, err := api.QuerySponsor(pageNumber, perPage)
 		if err != nil {
 			return SponsorGroups{}, fmt.Errorf("query sponsor page %d: %w", pageNumber, err)
-		}
-
-		if page == nil {
-			return SponsorGroups{}, fmt.Errorf("query sponsor page %d: empty response", pageNumber)
 		}
 
 		seen += appendPage(page, total-seen)
