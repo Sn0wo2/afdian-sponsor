@@ -5,48 +5,104 @@ on:
     tags: ["v*"]
   workflow_dispatch:
     inputs:
+      version:
+        description: Version to release (e.g. 0.1.1)
+        required: true
+        type: string
       snapshot:
-        description: Build a snapshot without publishing
+        description: Build a snapshot without tagging or publishing
         type: boolean
-        default: true
 
 permissions: {}
 
 concurrency:
-  group: release-${{ inputs.snapshot && 'snapshot' || 'publish' }}-${{ github.ref }}
+  group: release-${{ inputs.snapshot && format('snapshot-{0}', github.ref) || 'publish' }}
   cancel-in-progress: ${{ inputs.snapshot == true }}
 
 jobs:
-  check-release:
-    if: github.ref_type == 'tag' && !inputs.snapshot
+  prepare:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       checks: read
     outputs:
       skip: ${{ steps.release.outputs.skip }}
+      version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.tag.outputs.sha }}
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ (github.event_name == 'push' || inputs.snapshot) && github.ref || github.event.repository.default_branch }}
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Normalize version
+        id: version
+        env:
+          RELEASE_VERSION: ${{ inputs.version || github.ref_name }}
+        run: |
+          version=${RELEASE_VERSION#v}
+          if [[ $version != [0-9]* || $(npm exec --yes --package=semver@7 -- semver "$version") != "${version%%+*}" ]]; then
+            echo "Invalid semantic version: $RELEASE_VERSION" >&2
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Check for an already published release
         id: release
+        if: ${{ !inputs.snapshot }}
+        run: node scripts/check-release.js "$RELEASE_TAG"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node scripts/check-release.js
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: v${{ steps.version.outputs.version }}
+
+      - name: Resume an existing release tag
+        if: github.event_name == 'workflow_dispatch' && !inputs.snapshot && steps.release.outputs.skip != 'true'
+        run: |
+          if git show-ref --verify --quiet "refs/tags/v$VERSION"; then
+            git checkout --detach "v$VERSION"
+          fi
+
+      - uses: actions/setup-go@v7
+        if: github.event_name == 'workflow_dispatch' && steps.release.outputs.skip != 'true'
+        with:
+          go-version-file: go.mod
 
       - name: Reuse CI checks for this commit
-        if: steps.release.outputs.skip != 'true'
+        if: github.event_name == 'push' && steps.release.outputs.skip != 'true'
         timeout-minutes: 15
         uses: lewagon/wait-on-check-action@v1.9.1
         with:
           ref: ${{ github.sha }}
           check-name: Checks
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ github.token }}
           allowed-conclusions: success
 
+      - uses: golangci/golangci-lint-action@v9
+        if: github.event_name == 'workflow_dispatch' && steps.release.outputs.skip != 'true'
+        with:
+          version: latest
+
+      - name: Check the release candidate
+        if: github.event_name == 'workflow_dispatch' && steps.release.outputs.skip != 'true'
+        run: make test security
+
+      - name: Tag the release
+        id: tag
+        if: ${{ !inputs.snapshot && steps.release.outputs.skip != 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if git show-ref --verify --quiet "refs/tags/v$VERSION"; then
+            exit 0
+          fi
+          git tag "v$VERSION"
+          git -c credential.helper='!gh auth git-credential' push origin "refs/tags/v$VERSION"
+
   snapshot:
+    needs: prepare
     if: inputs.snapshot
     runs-on: ubuntu-latest
     permissions:
@@ -70,6 +126,7 @@ jobs:
           args: release --clean --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: v${{ needs.prepare.outputs.version }}
 
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
@@ -86,10 +143,8 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: check-release
-    if: >-
-      github.ref_type == 'tag' && !inputs.snapshot &&
-      needs.check-release.outputs.skip != 'true'
+    needs: prepare
+    if: ${{ !inputs.snapshot && needs.prepare.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -97,6 +152,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -119,3 +175,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: v${{ needs.prepare.outputs.version }}
