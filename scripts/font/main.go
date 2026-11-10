@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/parquet-go/bitpack/unsafecast"
 )
 
 //go:embed charset.txt
@@ -85,7 +87,7 @@ func run() error {
 		return errors.New("stylesheet does not contain a font URL")
 	}
 
-	fontURL, err := url.Parse(string(match[1]))
+	fontURL, err := url.Parse(unsafecast.String(match[1]))
 	if err != nil || fontURL.Scheme != "https" || fontURL.Hostname() != "fonts.gstatic.com" {
 		return errors.New("stylesheet contains an invalid font URL")
 	}

@@ -19,6 +19,7 @@ import (
 	"github.com/Sn0wo2/afdian-sponsor/internal/font"
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/mattn/go-runewidth"
+	"github.com/parquet-go/bitpack/unsafecast"
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/css"
 	minifysvg "github.com/tdewolff/minify/v2/svg"
@@ -37,7 +38,7 @@ var SponsorsSVGTemplate = template.Must(template.New("svg").Funcs(template.FuncM
 	"xml": func(value string) string {
 		var escaped bytes.Buffer
 
-		_ = xml.EscapeText(&escaped, []byte(value))
+		_ = xml.EscapeText(&escaped, unsafecast.Bytes(value))
 
 		return escaped.String()
 	},
