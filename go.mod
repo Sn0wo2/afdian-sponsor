@@ -6,7 +6,7 @@ require (
 	github.com/Sn0wo2/go-afdian-api/v2 v2.0.1
 	github.com/gabriel-vasile/mimetype v1.4.16
 	github.com/mattn/go-runewidth v0.0.31
-	github.com/parquet-go/bitpack v1.1.0
+	github.com/parquet-go/bitpack v1.1.1
 	github.com/tdewolff/minify/v2 v2.25.0
 	golang.org/x/image v0.48.0
 )
